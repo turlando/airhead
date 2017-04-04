@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block body %}
+{% if queue %}
+<ol>
+{% for track in queue %}
+    <li>{{ track.artist }} - {{ track.title }}</li>
+{% endfor %}
+</ol>
+{% else %}
+<p>Queue is empty!</p>
+{% endif %}
+{% endblock %}

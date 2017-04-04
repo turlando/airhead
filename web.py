@@ -108,6 +108,20 @@ def tracks():
     return render_template('tracks.html', tracks=tracks)
 
 
+def get_queue(queue):
+    tracks = []
+    for uuid in queue:
+        with open(os.path.join(conf_paths['Tracks'], uuid  + '.json')) as fp:
+            tracks.append(json.load(fp))
+    return tracks
+
+
+@app.route('/queue')
+def queue():
+    tracks = get_queue(transmitter_queue.queue)
+    return render_template('queue.html', queue=tracks)
+
+
 @app.route('/enqueue/<uuid:uuid>', methods=['POST'])
 def enqueue(uuid):
     transmitter_queue.put(str(uuid))
