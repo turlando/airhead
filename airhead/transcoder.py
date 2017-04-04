@@ -49,7 +49,7 @@ def transcode(in_path, out_path, uuid):
     out_file = os.path.join(out_path, uuid)
 
     ff = FFmpeg(
-        inputs={in_path: None},
+        inputs={in_file: None},
         outputs={out_file: [
             '-map', '0:0',
             '-f', 'ogg',
