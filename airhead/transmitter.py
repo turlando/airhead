@@ -25,7 +25,12 @@ class Transmitter(Thread):
             'user': self.conf_transmitter['Username'],
             'password': self.conf_transmitter['Password'],
             'format': shouty.Format.OGG,
-            'mount': '/' + self.conf_transmitter['Mount']
+            'mount': '/' + self.conf_transmitter['Mount'],
+            'audio_info': {
+                'samplerate': '44100',
+                'channels': '2',
+                'quality': '6'
+            }
         }
 
     def run(self):
