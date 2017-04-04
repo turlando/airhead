@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 
 from threading import Thread, Event
 from queue import Empty
@@ -39,6 +40,8 @@ def save_tags(in_path, out_path, uuid):
         tags = get_vorbis_tags(in_file)
     elif isinstance(f, MP3):
         tags = get_mp3_tags(in_file)
+
+    tags['import_date'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     with open(json_file, 'w') as fp:
         json.dump(tags, fp)

@@ -6,6 +6,7 @@
         <th>Title</th>
         <th>Artist</th>
         <th>Album</th>
+        <th>Import date</th>
         <th>Enqueue</th>
     </tr>
 {% for track in tracks %}
@@ -13,6 +14,7 @@
         <td>{{ track.title }}</td>
         <td>{{ track.artist }}</td>
         <td>{{ track.album }}</td>
+        <td>{{ track.import_date }}</td>
         <td><a href="#" onclick="enqueue('{{ track.uuid }}')">Enqueue</a></td>
     </tr>
 {% endfor %}
