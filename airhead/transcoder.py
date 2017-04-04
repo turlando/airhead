@@ -58,8 +58,6 @@ def transcode(in_path, out_path, uuid):
             ]})
     ff.run()
 
-    os.remove(in_file)
-
 
 class Transcoder(Thread):
     def __init__(self, conf, queue):
