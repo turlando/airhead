@@ -1,0 +1,17 @@
+[GENERAL]
+Debug = False
+
+[FLASK]
+SecretKey = CHANGE_ME_ASAP!
+
+[PATHS]
+Upload = /tmp/airhead/uploads
+Tracks = /tmp/airhead/tracks
+
+[TRANSMITTER]
+Host = localhost
+Port = 8000
+Username = source
+Password = hackme
+Mount = airhead
+

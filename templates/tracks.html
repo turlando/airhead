@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block body %}
+{% if tracks %}
+<table>
+    <tr>
+        <th>Title</th>
+        <th>Artist</th>
+        <th>Album</th>
+        <th>Enqueue</th>
+    </tr>
+{% for track in tracks %}
+    <tr>
+        <td>{{ track.title }}</td>
+        <td>{{ track.artist }}</td>
+        <td>{{ track.album }}</td>
+        <td><a href="#" onclick="enqueue('{{ track.uuid }}')">Enqueue</a></td>
+    </tr>
+{% endfor %}
+</table>
+{% else %}
+<p>No tracks found!</p>
+{% endif %}
+
+<script type="text/javascript">
+function enqueue(uuid) {
+    var csrf_token = '{{ csrf_token() }}';
+    var url = '/enqueue/' + uuid;
+
+    console.log(csrf_token)
+    console.log(url)
+
+    var request = new XMLHttpRequest();
+    request.open('POST', url, true);
+    request.setRequestHeader('X-CSRFToken', csrf_token);
+    request.send()
+}
+</script>
+{% endblock %}

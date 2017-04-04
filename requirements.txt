@@ -1,0 +1,6 @@
+ffmpy>=0.2.0
+Flask>=0.12
+Flask_WTF>=0.14.0
+mutagen>=1.37
+WTForms>=2.1
+shouty
