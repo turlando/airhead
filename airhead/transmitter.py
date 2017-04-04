@@ -34,9 +34,9 @@ class Transmitter(Thread):
         }
 
     def run(self):
-        while not self.stop.isSet():
+        with shouty.connect(**self.params) as connection:
+            while not self.stop.isSet():
 
-            with shouty.connect(**self.params) as connection:
                 if self.queue.empty():
                     connection.send_file(self.idle_media)
 
