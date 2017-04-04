@@ -21,6 +21,8 @@ from airhead.transcoder import Transcoder
 
 conf = get_config()
 conf_paths = conf['PATHS']
+conf_flask = conf['FLASK']
+conf_transmitter = conf['TRANSMITTER']
 
 transmitter_queue = Queue()
 transmitter = Transmitter(conf, transmitter_queue)
@@ -33,7 +35,7 @@ transcoder.start()
 app = Flask(__name__)
 csrf = CSRFProtect(app)
 
-app.config['SECRET_KEY'] = conf['FLASK']['SecretKey']
+app.config['SECRET_KEY'] = conf_flask['SecretKey']
 
 app.jinja_env.trim_blocks = True
 app.jinja_env.lstrip_blocks = True
@@ -67,6 +69,16 @@ class AudioFileRequired:
 
 class UploadForm(FlaskForm):
     track = FileField(validators=[FileRequired(), AudioFileRequired()])
+
+
+@app.route('/')
+def home():
+    msg = conf_flask['GreetMessage']
+    stream_url = "http://{}:{}/{}".format(
+        conf_transmitter['Host'],
+        conf_transmitter['Port'],
+        conf_transmitter['Mount'])
+    return render_template('home.html', greet_msg=msg, stream_url=stream_url)
 
 
 @app.route('/upload', methods=['GET', 'POST'])
@@ -111,7 +123,7 @@ def tracks():
 def get_queue(queue):
     tracks = []
     for uuid in queue:
-        with open(os.path.join(conf_paths['Tracks'], uuid  + '.json')) as fp:
+        with open(os.path.join(conf_paths['Tracks'], uuid + '.json')) as fp:
             tracks.append(json.load(fp))
     return tracks
 
