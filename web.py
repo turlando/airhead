@@ -1,6 +1,7 @@
 import os.path
 from uuid import uuid4
 import json
+import atexit
 
 from queue import Queue
 
@@ -27,10 +28,12 @@ conf_transmitter = conf['TRANSMITTER']
 transmitter_queue = Queue()
 transmitter = Transmitter(conf, transmitter_queue)
 transmitter.start()
+atexit.register(transmitter.join)
 
 transcoder_queue = Queue()
 transcoder = Transcoder(conf, transcoder_queue)
 transcoder.start()
+atexit.register(transcoder.join)
 
 app = Flask(__name__)
 csrf = CSRFProtect(app)

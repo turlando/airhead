@@ -46,6 +46,6 @@ class Transmitter(Thread):
 
                     connection.send_file(path)
 
-    def join(self, timeout=None):
+    def join(self, timeout=0):
         self.stop.set()
         super(Transmitter, self).join(timeout)

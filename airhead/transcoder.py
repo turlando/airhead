@@ -87,6 +87,6 @@ class Transcoder(Thread):
             except Empty:
                 continue
 
-    def join(self, timeout=None):
+    def join(self, timeout=0):
         self.stop.set()
         super(Transcoder, self).join(timeout)
