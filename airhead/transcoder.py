@@ -47,11 +47,12 @@ def save_tags(in_path, out_path, uuid):
         json.dump(tags, fp)
 
 
-def transcode(in_path, out_path, uuid):
+def transcode(ffmpeg, in_path, out_path, uuid):
     in_file = os.path.join(in_path, uuid)
     out_file = os.path.join(out_path, uuid)
 
     ff = FFmpeg(
+        executable=ffmpeg,
         inputs={in_file: None},
         outputs={out_file: [
             '-map', '0:0',
@@ -70,16 +71,18 @@ class Transcoder(Thread):
 
         self.conf = conf
         self.conf_paths = conf['PATHS']
+        self.conf_transcoder = conf['TRANSCODER']
 
     def run(self):
         while not self.stop.isSet():
 
             try:
+                ffmpeg = self.conf_transcoder['Exe']
                 uuid = self.queue.get(True)
                 in_path = self.conf_paths['Upload']
                 out_path = self.conf_paths['Tracks']
 
-                transcode(in_path, out_path, uuid)
+                transcode(ffmpeg, in_path, out_path, uuid)
                 save_tags(in_path, out_path, uuid)
 
                 os.remove(os.path.join(in_path, uuid))

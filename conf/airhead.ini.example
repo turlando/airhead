@@ -16,3 +16,5 @@ Username = source
 Password = hackme
 Mount = airhead
 
+[TRANSCODER]
+Exe = /usr/bin/ffmpeg
