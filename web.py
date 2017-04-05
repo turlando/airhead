@@ -5,7 +5,7 @@ import atexit
 
 from queue import Queue
 
-from flask import Flask, request, render_template
+from flask import Flask, request, redirect, render_template
 from flask_wtf import FlaskForm
 from flask_wtf.csrf import CSRFProtect
 from flask_wtf.file import FileField, FileRequired
@@ -95,6 +95,7 @@ def upload():
 
         f.save(path)
         transcoder_queue.put(uuid)
+        return redirect('/')
 
     return render_template('upload.html', form=form)
 
