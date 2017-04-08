@@ -86,8 +86,8 @@ def grep_tags(path, query):
     with open(path) as fp:
         track = json.load(fp)
 
-        return any((query.lower() in value.lower()
-                    for value in track.values()))
+        return any(query.lower() in value.lower()
+                   for value in track.values())
 
 
 def get_tracks(query=None):
@@ -101,10 +101,8 @@ def get_tracks(query=None):
                 path = os.path.join(base, f)
                 uuid = os.path.splitext(f)[0]
 
-                if query:
-                    if grep_tags(path, query):
-                        tracks.append(uuid)
-
+                if query and grep_tags(path, query):
+                    tracks.append(uuid)
                 else:
                     tracks.append(uuid)
 
@@ -131,10 +129,10 @@ def tracks():
     query = request.args.get('q', None)
 
     tracks = [get_tags(uuid)
-              for uuid in get_tracks(query=query)]
+              for uuid in get_tracks(query)]
 
     return jsonify(total=len(tracks),
-                   items=paginate(tracks, limit=limit, page=page)), 200
+                   items=paginate(tracks, limit, page)), 200
 
 
 @app.route('/api/queue', methods=['GET'])
@@ -146,7 +144,7 @@ def queue():
               for uuid in transmitter_queue.queue]
 
     return jsonify(total=len(tracks),
-                   items=paginate(tracks, limit=limit, page=page)), 200
+                   items=paginate(tracks, limit, page)), 200
 
 
 @app.route('/api/enqueue/<uuid:uuid>', methods=['PUT'])
