@@ -112,8 +112,7 @@ def get_tracks(query=None):
     return tracks
 
 
-def paginate(tracks, limit=10, page=0):
-    start = limit * page
+def paginate(tracks, start=0, limit=10):
     end = start + limit
 
     try:
@@ -124,27 +123,27 @@ def paginate(tracks, limit=10, page=0):
 
 @app.route('/api/tracks', methods=['GET'])
 def tracks():
+    start = int(request.args.get('start', '0'))
     limit = int(request.args.get('limit', '10'))
-    page = int(request.args.get('page', '0'))
     query = request.args.get('q', None)
 
     tracks = [get_tags(uuid)
               for uuid in get_tracks(query)]
 
     return jsonify(total=len(tracks),
-                   items=paginate(tracks, limit, page)), 200
+                   items=paginate(tracks, start, limit)), 200
 
 
 @app.route('/api/queue', methods=['GET'])
 def queue():
+    start = int(request.args.get('start', '0'))
     limit = int(request.args.get('limit', '10'))
-    page = int(request.args.get('page', '0'))
 
     tracks = [get_tags(uuid)
               for uuid in transmitter_queue.queue]
 
     return jsonify(total=len(tracks),
-                   items=paginate(tracks, limit, page)), 200
+                   items=paginate(tracks, start, limit)), 200
 
 
 @app.route('/api/queue/<uuid:uuid>', methods=['PUT'])
