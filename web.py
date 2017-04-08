@@ -133,7 +133,8 @@ def tracks():
     tracks = [get_tags(uuid)
               for uuid in get_tracks(query=query)]
 
-    return jsonify(paginate(tracks, limit=limit, page=page)), 200
+    return jsonify(total=len(tracks),
+                   items=paginate(tracks, limit=limit, page=page)), 200
 
 
 @app.route('/api/queue', methods=['GET'])
@@ -144,7 +145,8 @@ def queue():
     tracks = [get_tags(uuid)
               for uuid in transmitter_queue.queue]
 
-    return jsonify(paginate(tracks, limit=limit, page=page)), 200
+    return jsonify(total=len(tracks),
+                   items=paginate(tracks, limit=limit, page=page)), 200
 
 
 @app.route('/api/enqueue/<uuid:uuid>', methods=['PUT'])
