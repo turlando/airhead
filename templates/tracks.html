@@ -26,7 +26,7 @@
 <script type="text/javascript">
 function enqueue(uuid) {
     var csrf_token = '{{ csrf_token() }}';
-    var url = '/api/enqueue/' + uuid;
+    var url = '/api/queue/' + uuid;
 
     console.log(csrf_token)
     console.log(url)

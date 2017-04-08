@@ -147,7 +147,7 @@ def queue():
                    items=paginate(tracks, limit, page)), 200
 
 
-@app.route('/api/enqueue/<uuid:uuid>', methods=['PUT'])
+@app.route('/api/queue/<uuid:uuid>', methods=['PUT'])
 def enqueue(uuid):
     transmitter_queue.put(str(uuid))
     return '', 200
