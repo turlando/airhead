@@ -82,15 +82,31 @@ def get_tags(uuid):
         return track
 
 
-def get_tracks():
+def grep_tags(path, query):
+    with open(path) as fp:
+        track = json.load(fp)
+
+        return any((query.lower() in value.lower()
+                    for value in track.values()))
+
+
+def get_tracks(query=None):
     tracks = []
-    path = os.path.join(conf_paths['Tracks'])
+    base = os.path.join(conf_paths['Tracks'])
 
     try:
-        for f in os.listdir(path):
+        for f in os.listdir(base):
             if f.endswith('.json'):
+
+                path = os.path.join(base, f)
                 uuid = os.path.splitext(f)[0]
-                tracks.append(uuid)
+
+                if query:
+                    if grep_tags(path, query):
+                        tracks.append(uuid)
+
+                else:
+                    tracks.append(uuid)
 
     except FileNotFoundError:
         pass
@@ -106,6 +122,18 @@ def paginate(tracks, limit=10, page=0):
         return tracks[start:end]
     except IndexError:
         return tracks[start:]
+
+
+@app.route('/api/tracks', methods=['GET'])
+def tracks():
+    limit = int(request.args.get('limit', '10'))
+    page = int(request.args.get('page', '0'))
+    query = request.args.get('q', None)
+
+    tracks = [get_tags(uuid)
+              for uuid in get_tracks(query=query)]
+
+    return jsonify(paginate(tracks, limit=limit, page=page)), 200
 
 
 @app.route('/api/queue', methods=['GET'])
@@ -126,7 +154,7 @@ def enqueue(uuid):
 
 
 @app.route('/tracks')
-def tracks():
+def tracks_():
     tracks = [get_tags(uuid)
               for uuid in get_tracks()]
     return render_template('tracks.html', tracks=tracks)
