@@ -5,7 +5,7 @@ import atexit
 
 from queue import Queue
 
-from flask import Flask, request, redirect, render_template
+from flask import Flask, request, redirect, jsonify, render_template
 from flask_wtf import FlaskForm
 from flask_wtf.csrf import CSRFProtect
 from flask_wtf.file import FileField, FileRequired
@@ -74,14 +74,62 @@ class UploadForm(FlaskForm):
     track = FileField(validators=[FileRequired(), AudioFileRequired()])
 
 
-@app.route('/')
-def home():
-    msg = conf_flask['GreetMessage']
-    stream_url = "http://{}:{}/{}".format(
-        conf_transmitter['Host'],
-        conf_transmitter['Port'],
-        conf_transmitter['Mount'])
-    return render_template('home.html', greet_msg=msg, stream_url=stream_url)
+def get_tags(uuid):
+    path = os.path.join(conf_paths['Tracks'], uuid + '.json')
+    with open(path) as fp:
+        track = json.load(fp)
+        track['uuid'] = uuid
+        return track
+
+
+def get_tracks():
+    tracks = []
+    path = os.path.join(conf_paths['Tracks'])
+
+    try:
+        for f in os.listdir(path):
+            if f.endswith('.json'):
+                uuid = os.path.splitext(f)[0]
+                tracks.append(uuid)
+
+    except FileNotFoundError:
+        pass
+
+    return tracks
+
+
+def paginate(tracks, limit=10, page=0):
+    start = limit * page
+    end = start + limit
+
+    try:
+        return tracks[start:end]
+    except IndexError:
+        return tracks[start:]
+
+
+@app.route('/api/queue', methods=['GET'])
+def queue():
+    limit = int(request.args.get('limit', '10'))
+    page = int(request.args.get('page', '0'))
+
+    tracks = [get_tags(uuid)
+              for uuid in transmitter_queue.queue]
+
+    return jsonify(paginate(tracks, limit=limit, page=page)), 200
+
+
+@app.route('/api/enqueue/<uuid:uuid>', methods=['PUT'])
+def enqueue(uuid):
+    transmitter_queue.put(str(uuid))
+    return '', 200
+
+
+@app.route('/tracks')
+def tracks():
+    tracks = [get_tags(uuid)
+              for uuid in get_tracks()]
+    return render_template('tracks.html', tracks=tracks)
 
 
 @app.route('/upload', methods=['GET', 'POST'])
@@ -98,50 +146,6 @@ def upload():
         return redirect('/')
 
     return render_template('upload.html', form=form)
-
-
-def get_tracks(path):
-    tracks = []
-
-    try:
-        for f in os.listdir(path):
-            if f.endswith(".json"):
-                with open(os.path.join(path, f)) as fp:
-                    track = json.load(fp)
-                    track['uuid'] = os.path.splitext(f)[0]
-                    tracks.append(track)
-
-    except FileNotFoundError:
-        pass
-
-    return tracks
-
-
-@app.route('/tracks')
-def tracks():
-    path = conf_paths['Tracks']
-    tracks = get_tracks(path)
-    return render_template('tracks.html', tracks=tracks)
-
-
-def get_queue(queue):
-    tracks = []
-    for uuid in queue:
-        with open(os.path.join(conf_paths['Tracks'], uuid + '.json')) as fp:
-            tracks.append(json.load(fp))
-    return tracks
-
-
-@app.route('/queue')
-def queue():
-    tracks = get_queue(transmitter_queue.queue)
-    return render_template('queue.html', queue=tracks)
-
-
-@app.route('/enqueue/<uuid:uuid>', methods=['POST'])
-def enqueue(uuid):
-    transmitter_queue.put(str(uuid))
-    return '', 200
 
 
 if __name__ == '__main__':
