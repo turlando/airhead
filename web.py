@@ -100,8 +100,10 @@ def get_tracks(query=None):
                 path = os.path.join(base, f)
                 uuid = os.path.splitext(f)[0]
 
-                if query and grep_tags(path, query):
-                    tracks.append(uuid)
+                if query:
+                    if grep_tags(path, query):
+                        tracks.append(uuid)
+
                 else:
                     tracks.append(uuid)
 
