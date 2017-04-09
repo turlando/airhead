@@ -134,6 +134,22 @@ def tracks():
                    items=paginate(tracks, start, limit)), 200
 
 
+@app.route('/api/tracks', methods=['POST'])
+def upload():
+    form = UploadForm()
+
+    if form.validate_on_submit():
+        uuid = str(uuid4())
+        path = os.path.join(conf_paths['Upload'], uuid)
+        f = form.track.data
+
+        f.save(path)
+        transcoder_queue.put(uuid)
+        return jsonify(uuid=uuid), 202
+    else:
+        return '', 400
+
+
 @app.route('/api/queue', methods=['GET'])
 def queue():
     start = int(request.args.get('start', '0'))
@@ -160,7 +176,7 @@ def tracks_():
 
 
 @app.route('/upload', methods=['GET', 'POST'])
-def upload():
+def upload_():
     form = UploadForm()
 
     if request.method == 'POST' and form.validate_on_submit():
