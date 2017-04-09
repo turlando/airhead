@@ -5,7 +5,7 @@ import atexit
 
 from queue import Queue
 
-from flask import Flask, request, redirect, jsonify, render_template
+from flask import Flask, request, jsonify
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileRequired
 from wtforms.validators import StopValidation
@@ -165,29 +165,6 @@ def queue():
 def enqueue(uuid):
     transmitter_queue.put(str(uuid))
     return '', 200
-
-
-@app.route('/tracks')
-def tracks_():
-    tracks = [get_tags(uuid)
-              for uuid in get_tracks()]
-    return render_template('tracks.html', tracks=tracks)
-
-
-@app.route('/upload', methods=['GET', 'POST'])
-def upload_():
-    form = UploadForm()
-
-    if request.method == 'POST' and form.validate_on_submit():
-        uuid = str(uuid4())
-        path = os.path.join(conf_paths['Upload'], uuid)
-        f = form.track.data
-
-        f.save(path)
-        transcoder_queue.put(uuid)
-        return redirect('/')
-
-    return render_template('upload.html', form=form)
 
 
 if __name__ == '__main__':
