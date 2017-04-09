@@ -7,7 +7,6 @@ from queue import Queue
 
 from flask import Flask, request, redirect, jsonify, render_template
 from flask_wtf import FlaskForm
-from flask_wtf.csrf import CSRFProtect
 from flask_wtf.file import FileField, FileRequired
 from wtforms.validators import StopValidation
 
@@ -36,9 +35,9 @@ transcoder.start()
 atexit.register(transcoder.join)
 
 app = Flask(__name__)
-csrf = CSRFProtect(app)
 
 app.config['SECRET_KEY'] = conf_flask['SecretKey']
+app.config['WTF_CSRF_ENABLED'] = False
 
 app.jinja_env.trim_blocks = True
 app.jinja_env.lstrip_blocks = True
