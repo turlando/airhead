@@ -8,6 +8,7 @@ GreetMessage = Welcome!
 [PATHS]
 Upload = /tmp/airhead/uploads
 Tracks = /tmp/airhead/tracks
+Resources = /tmp/airhead/resources
 
 [TRANSMITTER]
 Host = localhost

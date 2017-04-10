@@ -172,7 +172,7 @@ def enqueue(uuid):
 @app.route('/')
 @app.route('/<path:resource>')
 def public_resource(resource='index.html'):
-    return send_from_directory('resources', resource)
+    return send_from_directory(conf_paths['Resources'], resource)
 
 
 if __name__ == '__main__':
