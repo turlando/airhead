@@ -171,6 +171,14 @@ def enqueue(uuid):
     return '', 200
 
 
+@app.route('/api/queue/current', methods=['GET'])
+def now_playing():
+    uuid = transmitter.now_playing
+    track = get_tags(uuid) if uuid else {}
+
+    return jsonify(track=track), 200
+
+
 @app.route('/')
 @app.route('/<path:resource>')
 def public_resource(resource='index.html'):
