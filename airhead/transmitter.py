@@ -11,6 +11,8 @@ class Transmitter(Thread):
         self.stop = Event()
         self.queue = queue
 
+        self.now_playing = None
+
         self.conf = conf
         self.conf_transmitter = conf['TRANSMITTER']
         self.conf_paths = conf['PATHS']
@@ -42,6 +44,7 @@ class Transmitter(Thread):
 
                 else:
                     uuid = self.queue.get(True)
+                    self.now_playing = uuid
                     path = os.path.join(self.conf_paths['Tracks'], uuid)
 
                     connection.send_file(path)
