@@ -13,6 +13,7 @@ from wtforms.validators import StopValidation
 import mutagen
 from mutagen.oggvorbis import OggVorbis
 from mutagen.mp3 import MP3
+from mutagen.flac import FLAC
 
 from airhead.config import get_config
 from airhead.transmitter import Transmitter
@@ -63,7 +64,8 @@ class AudioFileRequired:
         f = mutagen.File(s)
 
         if not (isinstance(f, OggVorbis)
-                or isinstance(f, MP3)):
+                or isinstance(f, MP3)
+                or isinstance(f, FLAC)):
             raise StopValidation(self.message)
 
         s.seek(0)

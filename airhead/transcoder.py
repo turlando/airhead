@@ -7,6 +7,7 @@ from queue import Empty
 import mutagen
 from mutagen.oggvorbis import OggVorbis
 from mutagen.mp3 import MP3, EasyMP3
+from mutagen.flac import FLAC
 
 import json
 
@@ -31,6 +32,15 @@ def get_mp3_tags(path):
     }
 
 
+def get_flac_tags(path):
+    f = FLAC(path)
+    return {
+        'title': '; '.join(f.tags['title']),
+        'artist': '; '.join(f.tags['artist']),
+        'album': '; '.join(f.tags['album'])
+    }
+
+
 def save_tags(in_path, out_path, uuid):
     in_file = os.path.join(in_path, uuid)
     json_file = '.'.join([os.path.join(out_path, uuid), 'json'])
@@ -40,6 +50,8 @@ def save_tags(in_path, out_path, uuid):
         tags = get_vorbis_tags(in_file)
     elif isinstance(f, MP3):
         tags = get_mp3_tags(in_file)
+    elif isinstance(f, FLAC):
+        tags = get_flac_tags(in_file)
 
     tags['import_date'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
