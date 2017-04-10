@@ -82,17 +82,15 @@ class Transcoder(Thread):
         self.queue = queue
 
         self.conf = conf
-        self.conf_paths = conf['PATHS']
-        self.conf_transcoder = conf['TRANSCODER']
 
     def run(self):
         while not self.stop.isSet():
 
             try:
-                ffmpeg = self.conf_transcoder['Exe']
+                ffmpeg = self.conf.get('TRANSCODER', 'Exe')
                 uuid = self.queue.get(True)
-                in_path = self.conf_paths['Upload']
-                out_path = self.conf_paths['Tracks']
+                in_path = self.conf.get('PATHS', 'Upload')
+                out_path = self.conf.get('PATHS', 'Tracks')
 
                 transcode(ffmpeg, in_path, out_path, uuid)
                 save_tags(in_path, out_path, uuid)

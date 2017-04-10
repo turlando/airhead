@@ -1,10 +1,6 @@
 [GENERAL]
 Debug = False
 
-[FLASK]
-SecretKey = CHANGE_ME_ASAP!
-GreetMessage = Welcome!
-
 [PATHS]
 Upload = /tmp/airhead/uploads
 Tracks = /tmp/airhead/tracks

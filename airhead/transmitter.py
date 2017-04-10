@@ -14,20 +14,18 @@ class Transmitter(Thread):
         self.now_playing = None
 
         self.conf = conf
-        self.conf_transmitter = conf['TRANSMITTER']
-        self.conf_paths = conf['PATHS']
 
         self.idle_media = os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
             'media', 'idle.ogg')
 
         self.params = {
-            'host': self.conf_transmitter['Host'],
-            'port': self.conf_transmitter.getint('Port'),
-            'user': self.conf_transmitter['Username'],
-            'password': self.conf_transmitter['Password'],
+            'host': self.conf.get('TRANSMITTER', 'Host'),
+            'port': self.conf.getint('TRANSMITTER', 'Port'),
+            'user': self.conf.get('TRANSMITTER', 'Username'),
+            'password': self.conf.get('TRANSMITTER', 'Password'),
             'format': shouty.Format.OGG,
-            'mount': '/' + self.conf_transmitter['Mount'],
+            'mount': '/' + self.conf.get('TRANSMITTER', 'Mount'),
             'audio_info': {
                 'samplerate': '44100',
                 'channels': '2',
@@ -46,7 +44,7 @@ class Transmitter(Thread):
                 else:
                     uuid = self.queue.get(True)
                     self.now_playing = uuid
-                    path = os.path.join(self.conf_paths['Tracks'], uuid)
+                    path = os.path.join(self.conf.get('PATHS', 'Tracks'), uuid)
 
                     connection.send_file(path)
 

@@ -21,9 +21,6 @@ from airhead.transcoder import Transcoder
 
 
 conf = get_config()
-conf_paths = conf['PATHS']
-conf_flask = conf['FLASK']
-conf_transmitter = conf['TRANSMITTER']
 
 transmitter_queue = Queue()
 transmitter = Transmitter(conf, transmitter_queue)
@@ -37,7 +34,6 @@ atexit.register(transcoder.join)
 
 app = Flask(__name__)
 
-app.config['SECRET_KEY'] = conf_flask['SecretKey']
 app.config['WTF_CSRF_ENABLED'] = False
 
 app.jinja_env.trim_blocks = True
@@ -76,7 +72,7 @@ class UploadForm(FlaskForm):
 
 
 def get_tags(uuid):
-    path = os.path.join(conf_paths['Tracks'], uuid + '.json')
+    path = os.path.join(conf.get('PATHS', 'Tracks'), uuid + '.json')
     with open(path) as fp:
         track = json.load(fp)
         track['uuid'] = uuid
@@ -93,7 +89,7 @@ def grep_tags(path, query):
 
 def get_tracks(query=None):
     tracks = []
-    base = os.path.join(conf_paths['Tracks'])
+    base = os.path.join(conf.get('PATHS', 'Tracks'))
 
     try:
         for f in os.listdir(base):
@@ -143,7 +139,7 @@ def upload():
 
     if form.validate_on_submit():
         uuid = str(uuid4())
-        path = os.path.join(conf_paths['Upload'], uuid)
+        path = os.path.join(conf.get('PATHS', 'Upload'), uuid)
         f = form.track.data
 
         f.save(path)
@@ -182,8 +178,9 @@ def now_playing():
 @app.route('/')
 @app.route('/<path:resource>')
 def public_resource(resource='index.html'):
-    return send_from_directory(conf_paths['Resources'], resource)
+    return send_from_directory(conf.get('PATHS', 'Resources'), resource)
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080, debug=False)
+    app.run(host='0.0.0.0', port=8080,
+            debug=conf.getboolean('GENERAL', 'Debug'))
