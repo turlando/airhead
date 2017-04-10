@@ -120,6 +120,19 @@ def paginate(tracks, start=0, limit=10):
         return tracks[start:]
 
 
+@app.route('/api/info', methods=['GET'])
+def info():
+    info = {
+        'name': conf.get('WEB', 'Name'),
+        'greet_message': conf.get('WEB', 'GreetMessage'),
+        'stream_url': "http://{}:{}/{}".format(
+            conf.get('TRANSMITTER', 'Host'),
+            conf.get('TRANSMITTER', 'Port'),
+            conf.get('TRANSMITTER', 'Mount'))
+    }
+    return jsonify(**info), 200
+
+
 @app.route('/api/tracks', methods=['GET'])
 def tracks():
     start = int(request.args.get('start', '0'))

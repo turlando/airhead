@@ -1,6 +1,10 @@
 [GENERAL]
 Debug = False
 
+[WEB]
+Name = AirHead
+GreetMessage = Welcome!
+
 [PATHS]
 Upload = /tmp/airhead/uploads
 Tracks = /tmp/airhead/tracks
