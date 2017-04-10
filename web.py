@@ -5,7 +5,7 @@ import atexit
 
 from queue import Queue
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileRequired
 from wtforms.validators import StopValidation
@@ -167,6 +167,12 @@ def queue():
 def enqueue(uuid):
     transmitter_queue.put(str(uuid))
     return '', 200
+
+
+@app.route('/')
+@app.route('/<path:resource>')
+def public_resource(resource='index.html'):
+    return send_from_directory('resources', resource)
 
 
 if __name__ == '__main__':
