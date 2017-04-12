@@ -24,11 +24,13 @@ conf = get_config()
 
 transmitter_queue = Queue()
 transmitter = Transmitter(conf, transmitter_queue)
+transmitter.daemon = True
 transmitter.start()
 atexit.register(transmitter.join)
 
 transcoder_queue = Queue()
 transcoder = Transcoder(conf, transcoder_queue)
+transcoder.daemon = True
 transcoder.start()
 atexit.register(transcoder.join)
 
