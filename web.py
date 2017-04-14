@@ -113,13 +113,16 @@ def get_tracks(query=None):
     return tracks
 
 
-def paginate(tracks, start=0, limit=10):
-    end = start + limit
+def paginate(tracks, start=0, limit=0):
+    if limit != 0:
+        end = start + limit
+        try:
+            return tracks[start:end]
+        except IndexError:
+            return tracks[start:]
 
-    try:
-        return tracks[start:end]
-    except IndexError:
-        return tracks[start:]
+    else:
+        return tracks
 
 
 @app.route('/api/info', methods=['GET'])
@@ -138,7 +141,7 @@ def info():
 @app.route('/api/tracks', methods=['GET'])
 def tracks():
     start = int(request.args.get('start', '0'))
-    limit = int(request.args.get('limit', '10'))
+    limit = int(request.args.get('limit', '0'))
     query = request.args.get('q', None)
 
     tracks = [get_tags(uuid)
@@ -167,7 +170,7 @@ def upload():
 @app.route('/api/queue', methods=['GET'])
 def queue():
     start = int(request.args.get('start', '0'))
-    limit = int(request.args.get('limit', '10'))
+    limit = int(request.args.get('limit', '0'))
 
     tracks = [get_tags(uuid)
               for uuid in transmitter_queue.queue]
