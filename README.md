@@ -100,6 +100,7 @@ as the `uwsgi` user.
    the `uwsgi` user has write rights on `logfile`.
 
 ### Web frontend
+
 1. Clone the `airhead-cljs` repo somewhere
 
        git clone https://github.com/edne/airhead-cljs.git /tmp/airhead-cljs
@@ -116,6 +117,7 @@ as the `uwsgi` user.
        chown -R www:www /var/www/airhead
 
 ### Configure nginx
+
 Adjust your server section as follows:
 
     server {
@@ -130,3 +132,23 @@ Adjust your server section as follows:
             client_max_body_size 100M;
         }
     }
+
+## Testing environment
+
+To run this software without uWSGI and nginx follow these instructions:
+
+1. Install the dependencies listed in the [deploy section](#deploy) except
+   nginx and uWSGI
+
+2. Follow the instructions listed in the [REST API section](#rest-api)
+   keeping in mind that you can run this software with your own user (no root
+   required) and the configuration can stay in conf/airhead.ini, inside the
+   project directory. Of course skip the uWSGI configuration (list item 5).
+
+3. Follow the instructions listed in the [Web frontend section](#web-frontend).
+   You can skip list item 3.
+
+4. Edit airhead.conf and correct the `Resources` field in the `[PATHS]` section
+   to point to the airhead-cljs output directory.
+
+4. Run `web.py`.
