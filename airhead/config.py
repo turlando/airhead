@@ -16,3 +16,8 @@ def get_config():
     else:
         raise Exception("Config file 'airhead.ini' not found in any of {}."
                         .format(', '.join(CONFIG_PATHS)))
+
+
+idle_media = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    'media', 'idle.ogg')

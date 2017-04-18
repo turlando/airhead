@@ -16,14 +16,15 @@ from mutagen.mp3 import MP3
 from mutagen.flac import FLAC
 
 from airhead.config import get_config
+from airhead.playlist import Playlist, Duplicate
 from airhead.transmitter import Transmitter
 from airhead.transcoder import Transcoder
 
 
 conf = get_config()
 
-transmitter_queue = Queue()
-transmitter = Transmitter(conf, transmitter_queue)
+transmitter_queue = Playlist()
+transmitter = Transmitter(transmitter_queue)
 transmitter.daemon = True
 transmitter.start()
 atexit.register(transmitter.join)
@@ -181,13 +182,19 @@ def queue():
 
 @app.route('/api/queue/<uuid:uuid>', methods=['PUT'])
 def enqueue(uuid):
-    transmitter_queue.put(str(uuid))
-    return '', 200
+    try:
+        transmitter_queue.put(str(uuid))
+
+    except Duplicate:
+        return '', 409
+
+    else:
+        return '', 200
 
 
 @app.route('/api/queue/current', methods=['GET'])
 def now_playing():
-    uuid = transmitter.now_playing
+    uuid = transmitter_queue.now_playing
     track = get_tags(uuid) if uuid else {}
 
     return jsonify(track=track), 200
