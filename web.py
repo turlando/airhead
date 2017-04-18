@@ -192,6 +192,12 @@ def enqueue(uuid):
         return '', 200
 
 
+@app.route('/api/queue/<uuid:uuid>', methods=['DELETE'])
+def dequeue(uuid):
+    transmitter_queue.dequeue(str(uuid))
+    return '', 200
+
+
 @app.route('/api/queue/current', methods=['GET'])
 def now_playing():
     uuid = transmitter_queue.now_playing

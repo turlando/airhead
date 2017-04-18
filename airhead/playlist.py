@@ -18,3 +18,10 @@ class Playlist(queue.Queue):
             self.queue.append(item)
         else:
             raise Duplicate
+
+    def dequeue(self, item):
+        with self.mutex:
+            try:
+                self.queue.remove(item)
+            except ValueError:
+                pass
