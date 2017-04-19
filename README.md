@@ -40,7 +40,7 @@ as the `uwsgi` user.
        mkdir /etc/airhead
        cp -p /opt/airhead/conf/airhead.ini.example /etc/airhead/airhead.ini
 
-   Edit `/var/airhead/airhead.ini` with any text editor.
+   Edit `/etc/airhead/airhead.ini` with any text editor.
    **Remember to always use absolute paths.**
 
    1. In the `[PATHS]` section change `Upload` and `Tracks` respectively to
@@ -52,16 +52,27 @@ as the `uwsgi` user.
    3. In the `[TRANSCODER]` section change `Exe` to point to your `ffmpeg`
       binary.
 
-   Make sure that the `uwsgi` user has write rights on `Upload` and `Tracks`
-   paths.
+   Chown the airhead directory to the `uwsgi` user.
+   Make also sure that the `uwsgi` user has write rights on `Upload` and
+   `Tracks` paths.
+
+       chown -R uwsgi:uwsgi /opt/airhead
+       chown -R uwsgi:uwsgi /mnt/airhead/uploads
+       chown -R uwsgi:uwsgi /mnt/airhead/tracks
+
+    Assuming `/mnt/airhead/uploads` and `/mnt/airhead/tracks` are the paths
+    you have set in the `[PATHS]` section of the airhead.ini file.
 
 4. Create a virtualenv and install pip dependencies
 
    If you want to run AirHead inside a virtualenv run:
 
        cd /opt/airhead
+       su uwsgi -c sh # on Linux
+       su  su -m uwsgi -c sh # on FreeBSD
        virtualenv -p python3 env
-       source env/bin/activate
+       source env/bin/activate # for bash
+       . env/bin/activate # for sh
 
    Then install pip dependencies with:
        pip install -r requirements.txt
@@ -108,7 +119,7 @@ as the `uwsgi` user.
 2. Compile it
 
        cd /tmp/airhead-cljs
-       lein cljsbuild once
+       lein release
 
 3. Move it to the public httpd path
 
