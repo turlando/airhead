@@ -1,21 +1,18 @@
 [GENERAL]
-Debug = False
+Debug = True
+Frontend = /tmp/airhead/frontend
+Library = /tmp/airhead/library
 
-[WEB]
-Name = AirHead
-GreetMessage = Welcome!
-
-[PATHS]
-Upload = /tmp/airhead/uploads
-Tracks = /tmp/airhead/tracks
-Resources = /tmp/airhead/resources
-
-[TRANSMITTER]
-Host = localhost
+[ICECAST]
+Host = 127.0.0.1
 Port = 8000
 Username = source
 Password = hackme
 Mount = airhead
 
-[TRANSCODER]
+[FFMPEG]
 Exe = /usr/bin/ffmpeg
+
+[INFO]
+Name = AirHead
+GreetMessage = Welcome!

@@ -1,217 +1,149 @@
-import os.path
-from uuid import uuid4
-import json
-import atexit
+import aiohttp
+from aiohttp import web
 
-from queue import Queue
+import logging
 
-from flask import Flask, request, jsonify, send_from_directory
-from flask_wtf import FlaskForm
-from flask_wtf.file import FileField, FileRequired
-from wtforms.validators import StopValidation
-
-import mutagen
-from mutagen.oggvorbis import OggVorbis
-from mutagen.mp3 import MP3
-from mutagen.flac import FLAC
+from tempfile import NamedTemporaryFile as TemporaryFile
 
 from airhead.config import get_config
-from airhead.playlist import Playlist, Duplicate
-from airhead.transmitter import Transmitter
-from airhead.transcoder import Transcoder
+from airhead.library import Library
+from airhead.playlist import Playlist, DuplicateError
+from airhead.broadcaster import Broadcaster
 
 
-conf = get_config()
-
-transmitter_queue = Playlist()
-transmitter = Transmitter(transmitter_queue)
-transmitter.daemon = True
-transmitter.start()
-atexit.register(transmitter.join)
-
-transcoder_queue = Queue()
-transcoder = Transcoder(conf, transcoder_queue)
-transcoder.daemon = True
-transcoder.start()
-atexit.register(transcoder.join)
-
-app = Flask(__name__)
-
-app.config['WTF_CSRF_ENABLED'] = False
-
-app.jinja_env.trim_blocks = True
-app.jinja_env.lstrip_blocks = True
+logger = logging.getLogger(__name__)
 
 
-class AudioFileRequired:
-    """
-    Validates that an uploaded file from a flask_wtf FileFiled is actually
-    an audio file (Vorbis or MP3 for the moment) using mutagen to check
-    the headers.
-    """
+async def store_file(reader):
+    f = await reader.next()
 
-    field_flags = ('required', )
+    with TemporaryFile(delete=False) as fp:
+        while True:
+            chunk = await f.read_chunk()
 
-    DEFAULT_MESSAGE = "Invalid audio file."
+            if not chunk:
+                break
 
-    def __init__(self, message=None):
-        self.message = (message if message
-                        else self.DEFAULT_MESSAGE)
+            fp.write(chunk)
 
-    def __call__(self, form, field):
-        s = field.data.stream
-        f = mutagen.File(s)
-
-        if not (isinstance(f, OggVorbis)
-                or isinstance(f, MP3)
-                or isinstance(f, FLAC)):
-            raise StopValidation(self.message)
-
-        s.seek(0)
+    return fp.name
 
 
-class UploadForm(FlaskForm):
-    track = FileField(validators=[FileRequired(), AudioFileRequired()])
-
-
-def get_tags(uuid):
-    path = os.path.join(conf.get('PATHS', 'Tracks'), uuid + '.json')
-    with open(path) as fp:
-        track = json.load(fp)
-        track['uuid'] = uuid
-        return track
-
-
-def grep_tags(path, query):
-    with open(path) as fp:
-        track = json.load(fp)
-
-        return any(query.lower() in value.lower()
-                   for value in track.values())
-
-
-def get_tracks(query=None):
-    tracks = []
-    base = os.path.join(conf.get('PATHS', 'Tracks'))
-
+async def library_query(request):
     try:
-        for f in os.listdir(base):
-            if f.endswith('.json'):
+        q = request.query['q']
+    except KeyError:
+        q = None
 
-                path = os.path.join(base, f)
-                uuid = os.path.splitext(f)[0]
+    tracks = app['library'].query(q)
+    return web.json_response({'tracks': tracks})
 
-                if query:
-                    if grep_tags(path, query):
-                        tracks.append(uuid)
 
-                else:
-                    tracks.append(uuid)
+async def info(request):
+    return web.json_response({
+        'name': app['config'].get('INFO', 'Name'),
+        'greet_message': app['config'].get('INFO', 'GreetMessage'),
+        'stream_url': "http://{}:{}/{}".format(
+            app['config'].get('ICECAST', 'Host'),
+            app['config'].get('ICECAST', 'Port'),
+            app['config'].get('ICECAST', 'Mount'))
+    })
 
-    except FileNotFoundError:
+
+async def library_add(request):
+    reader = await request.multipart()
+    path = await store_file(reader)
+
+    uuid = app['library'].add(path, delete=True)
+    return web.json_response({
+        'status': 'success',
+        'uuid': uuid
+    })
+
+
+async def playlist_query(request):
+    return web.json_response(app['playlist'].query())
+
+
+async def playlist_add(request):
+    logger.debug("Adding to playlist")
+    uuid = request.match_info['uuid']
+    try:
+        app['playlist'].put(uuid)
+    except DuplicateError:
+        return web.json_response({'status': 'duplicate'})
+    finally:
+        return web.json_response({'status': 'success'})
+
+
+async def playlist_remove(request):
+    uuid = request.match_info['uuid']
+    try:
+        app['playlist'].remove(uuid)
+    except KeyError:
+        return web.json_response({'status': 'error'})
+    finally:
+        return web.json_response({'status': 'success'})
+
+
+async def websocket(request):
+    ws = web.WebSocketResponse()
+    await ws.prepare(request)
+
+    request.app['websockets'].add(ws)
+
+    async for msg in ws:
         pass
 
-    return tracks
+    await websocket_shutdown(app, ws)
+
+    return ws
 
 
-def paginate(tracks, start=0, limit=0):
-    if limit != 0:
-        end = start + limit
-        try:
-            return tracks[start:end]
-        except IndexError:
-            return tracks[start:]
-
+async def websocket_shutdown(app, ws=None):
+    if ws:
+        ws.close(code=aiohttp.WSCloseCode.GOING_AWAY)
     else:
-        return tracks
+        for client in app['websockets']:
+            await client.close(code=aiohttp.WSCloseCode.GOING_AWAY)
 
 
-@app.route('/api/info', methods=['GET'])
-def info():
-    info = {
-        'name': conf.get('WEB', 'Name'),
-        'greet_message': conf.get('WEB', 'GreetMessage'),
-        'stream_url': "http://{}:{}/{}".format(
-            conf.get('TRANSMITTER', 'Host'),
-            conf.get('TRANSMITTER', 'Port'),
-            conf.get('TRANSMITTER', 'Mount'))
-    }
-    return jsonify(**info), 200
+def broadcast_library_update():
+    for client in app['websockets']:
+        client.send_json({'update': 'library'})
 
 
-@app.route('/api/tracks', methods=['GET'])
-def tracks():
-    start = int(request.args.get('start', '0'))
-    limit = int(request.args.get('limit', '0'))
-    query = request.args.get('q', None)
-
-    tracks = [get_tags(uuid)
-              for uuid in get_tracks(query)]
-
-    return jsonify(total=len(tracks),
-                   items=paginate(tracks, start, limit)), 200
+def broadcast_playlist_update():
+    for client in app['websockets']:
+        client.send_json({'update': 'playlist'})
 
 
-@app.route('/api/tracks', methods=['POST'])
-def upload():
-    form = UploadForm()
-
-    if form.validate_on_submit():
-        uuid = str(uuid4())
-        path = os.path.join(conf.get('PATHS', 'Upload'), uuid)
-        f = form.track.data
-
-        f.save(path)
-        transcoder_queue.put(uuid)
-        return jsonify(uuid=uuid), 202
-    else:
-        return '', 400
+def broadcaster_shutdown(app):
+    app['broadcaster'].join()
 
 
-@app.route('/api/queue', methods=['GET'])
-def queue():
-    start = int(request.args.get('start', '0'))
-    limit = int(request.args.get('limit', '0'))
+app = web.Application()
+app['config'] = get_config()
+app['library'] = Library(app['config'].get('GENERAL', 'Library'),
+                         notify=broadcast_library_update)
+app['playlist'] = Playlist(app['library'], notify=broadcast_playlist_update)
+app['broadcaster'] = Broadcaster(app['config']['ICECAST'], app['playlist'])
+app['websockets'] = set()
 
-    tracks = [get_tags(uuid)
-              for uuid in transmitter_queue.queue]
+if app['config'].getboolean('GENERAL', 'Debug'):
+    logging.basicConfig(level=logging.DEBUG)
 
-    return jsonify(total=len(tracks),
-                   items=paginate(tracks, start, limit)), 200
+app.router.add_route('GET', '/api/info', info)
+app.router.add_route('GET', '/api/library', library_query)
+app.router.add_route('POST', '/api/library', library_add)
+app.router.add_route('GET', '/api/playlist', playlist_query)
+app.router.add_route('PUT', '/api/playlist/{uuid}', playlist_add)
+app.router.add_route('DELETE', '/api/playlist/{uuid}', playlist_remove)
+app.router.add_route('GET', '/ws', websocket)
+app.router.add_static('/', app['config'].get('GENERAL', 'Frontend'))
 
+app.on_shutdown.append(websocket_shutdown)
+app.on_shutdown.append(broadcaster_shutdown)
 
-@app.route('/api/queue/<uuid:uuid>', methods=['PUT'])
-def enqueue(uuid):
-    try:
-        transmitter_queue.put(str(uuid))
-
-    except Duplicate:
-        return '', 409
-
-    else:
-        return '', 200
-
-
-@app.route('/api/queue/<uuid:uuid>', methods=['DELETE'])
-def dequeue(uuid):
-    transmitter_queue.dequeue(str(uuid))
-    return '', 200
-
-
-@app.route('/api/queue/current', methods=['GET'])
-def now_playing():
-    uuid = transmitter_queue.now_playing
-    track = get_tags(uuid) if uuid else {}
-
-    return jsonify(track=track), 200
-
-
-@app.route('/')
-@app.route('/<path:resource>')
-def public_resource(resource='index.html'):
-    return send_from_directory(conf.get('PATHS', 'Resources'), resource)
-
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080,
-            debug=conf.getboolean('GENERAL', 'Debug'))
+app['broadcaster'].start()
+web.run_app(app, host='127.0.0.1', port=8080)
