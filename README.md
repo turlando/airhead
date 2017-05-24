@@ -83,9 +83,24 @@ We will also assume that nginx will run as the `www` user.
 
 ### Configure nginx
 
+You can test this software without the needing of any HTTP proxy by just
+making the `Frontend` variable in the `[GENERAL]` condifiguration section point
+to the frontend path and running `web.py`.
+
+If you want a more stable deploy you can make nginx host the frontend and
+reverse the API calls.
+
 Adjust your server section as follows:
 
     server {
+        location ~ ^/api {
+            proxy_pass http://127.0.0.1:8080;
+            proxy_set_header Host $http_host;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_redirect off;
+            proxy_buffering off;
+        }
+
         location  /  {
             root /var/www/airhead
             index index.html;
