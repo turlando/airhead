@@ -87,7 +87,7 @@ async def playlist_add(request):
         app['playlist'].put(uuid)
     except DuplicateError:
         return web.json_response({'status': 'duplicate'})
-    finally:
+    else:
         return web.json_response({'status': 'success'})
 
 
@@ -97,7 +97,7 @@ async def playlist_remove(request):
         app['playlist'].remove(uuid)
     except KeyError:
         return web.json_response({'status': 'error'})
-    finally:
+    else:
         return web.json_response({'status': 'success'})
 
 

@@ -31,7 +31,7 @@ def _get_tags(f):
         get_tags = CODECS[codec]
     except KeyError:
         raise Exception("Codec not supported.")
-    finally:
+    else:
         tags = get_tags(media_file)
 
     return tags
