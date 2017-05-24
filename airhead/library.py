@@ -3,7 +3,7 @@ from threading import Lock
 from uuid import uuid4
 import json
 
-from airhead.transcoder import Transcoder
+from airhead.transcoder import transcode
 
 
 META_FILE = 'metadata.json'
@@ -20,7 +20,6 @@ class Library:
             self._meta_path.touch()
 
         self._notify = notify
-        self._transcoder = Transcoder(self)
 
         self._lock = Lock()
         self._meta = {}
@@ -38,10 +37,10 @@ class Library:
         with self._meta_path.open(mode='w+') as fp:
             json.dump(self._meta, fp)
 
-    def _add(self, d):
+    def _add(self, track):
         self._lock.acquire()
 
-        self._meta.update(d)
+        self._meta.update(track)
         self._save()
 
         if self._notify:
@@ -72,7 +71,7 @@ class Library:
             raise FileNotFoundError("No such file:", str(path))
 
         uuid = str(uuid4())
-        self._transcoder.process(path, uuid, delete=delete)
+        transcode(self, path, uuid, delete=delete)
         return uuid
 
     def remove(self, uuid):

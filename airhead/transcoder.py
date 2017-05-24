@@ -37,7 +37,14 @@ def _get_tags(f):
     return tags
 
 
-def _transcode(in_, out, exe='ffmpeg'):
+CODECS = {
+    OggVorbis: _vorbis_tags,
+    FLAC: _vorbis_tags,
+    MP3: _id3_tags
+}
+
+
+def _run_ffmpeg(in_, out, exe='ffmpeg'):
     ff = FFmpeg(
         executable=exe,
         inputs={str(in_): None},
@@ -50,31 +57,17 @@ def _transcode(in_, out, exe='ffmpeg'):
     ff.run()
 
 
-CODECS = {
-    OggVorbis: _vorbis_tags,
-    FLAC: _vorbis_tags,
-    MP3: _id3_tags
-}
+def transcode(library, path, uuid, delete=False):
+    def worker():
+        track = {uuid: _get_tags(path)}
 
-
-class Transcoder:
-    def __init__(self, library):
-        self._library = library
-
-    def _process(self, path, uuid, delete):
-        d = {uuid: _get_tags(path)}
-
-        dest_path = self._library.get_path(uuid)
-        _transcode(path, dest_path)
+        dest_path = library.get_path(uuid)
+        _run_ffmpeg(path, dest_path)
 
         if delete:
             path.unlink()
 
-        self._library._add(d)
+        library._add(track)
 
-    def process(self, path, uuid, delete=False):
-        def f():
-            self._process(path, uuid, delete)
-
-        t = Thread(target=f)
-        t.start()
+    t = Thread(target=worker)
+    t.start()
