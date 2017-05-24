@@ -29,10 +29,12 @@ class Library:
             self._load()
 
     def _load(self):
+        "Loads tags to self._meta from metadata.json."
         with self._meta_path.open() as fp:
             self._meta = json.load(fp)
 
     def _save(self):
+        "Flushes updates from self._meta to metadata.json."
         with self._meta_path.open(mode='w+') as fp:
             json.dump(self._meta, fp)
 

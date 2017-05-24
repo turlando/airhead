@@ -37,17 +37,13 @@ class Playlist(queue.Queue):
         else:
             raise DuplicateError
 
-    def query(self):
-        current = self._library.get_tags(self._current) \
-                  if self._current else None
-        next_ = [self._library.get_tags(track)
-                 for track in self.queue] \
-                if not self.empty() else []
+    @property
+    def current(self):
+        return self._current
 
-        return {
-            'current': current,
-            'next': next_
-        }
+    @property
+    def next_(self):
+        return list(self.queue)
 
     def remove(self, item):
         with self.mutex:

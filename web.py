@@ -29,16 +29,6 @@ async def store_file(reader):
     return fp.name
 
 
-async def library_query(request):
-    try:
-        q = request.query['q']
-    except KeyError:
-        q = None
-
-    tracks = app['library'].query(q)
-    return web.json_response({'tracks': tracks})
-
-
 async def info(request):
     return web.json_response({
         'name': app['config'].get('INFO', 'Name'),
@@ -47,6 +37,27 @@ async def info(request):
             app['config'].get('ICECAST', 'Host'),
             app['config'].get('ICECAST', 'Port'),
             app['config'].get('ICECAST', 'Mount'))
+    })
+
+
+async def library_query(request):
+    try:
+        q = request.query['q']
+    except KeyError:
+        q = None
+
+    tracks = app['library'].query(q).keys()
+    return web.json_response({
+        'status': 'success',
+        'tracks': list(tracks)
+    })
+
+
+async def library_get(request):
+    uuid = request.match_info['uuid']
+    return web.json_response({
+        'status': 'success',
+        'track': app['library'].get_tags(uuid)
     })
 
 
@@ -62,7 +73,11 @@ async def library_add(request):
 
 
 async def playlist_query(request):
-    return web.json_response(app['playlist'].query())
+    return web.json_response({
+        'status': 'success',
+        'current': app['playlist'].current,
+        'next': app['playlist'].next_
+    })
 
 
 async def playlist_add(request):
@@ -133,6 +148,7 @@ app['websockets'] = set()
 
 app.router.add_route('GET', '/api/info', info)
 app.router.add_route('GET', '/api/library', library_query)
+app.router.add_route('GET', '/api/library/{uuid}', library_get)
 app.router.add_route('POST', '/api/library', library_add)
 app.router.add_route('GET', '/api/playlist', playlist_query)
 app.router.add_route('PUT', '/api/playlist/{uuid}', playlist_add)
@@ -145,6 +161,8 @@ app.on_shutdown.append(broadcaster_shutdown)
 
 if app['config'].getboolean('GENERAL', 'Debug'):
     logging.basicConfig(level=logging.DEBUG)
+else:
+    logging.basicConfig(level=logging.WARNING)
 
 app['broadcaster'].start()
 web.run_app(app,
