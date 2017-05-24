@@ -1,7 +1,13 @@
 [GENERAL]
 Debug = True
-Frontend = /tmp/airhead/frontend
+Address = 127.0.0.1
+Port = 8080
 Library = /tmp/airhead/library
+Frontend = /tmp/airhead/frontend
+
+[INFO]
+Name = AirHead
+GreetMessage = Welcome!
 
 [ICECAST]
 Host = 127.0.0.1
@@ -12,7 +18,3 @@ Mount = airhead
 
 [FFMPEG]
 Exe = /usr/bin/ffmpeg
-
-[INFO]
-Name = AirHead
-GreetMessage = Welcome!

@@ -123,15 +123,13 @@ def broadcaster_shutdown(app):
 
 
 app = web.Application()
+
 app['config'] = get_config()
 app['library'] = Library(app['config'].get('GENERAL', 'Library'),
                          notify=broadcast_library_update)
 app['playlist'] = Playlist(app['library'], notify=broadcast_playlist_update)
 app['broadcaster'] = Broadcaster(app['config']['ICECAST'], app['playlist'])
 app['websockets'] = set()
-
-if app['config'].getboolean('GENERAL', 'Debug'):
-    logging.basicConfig(level=logging.DEBUG)
 
 app.router.add_route('GET', '/api/info', info)
 app.router.add_route('GET', '/api/library', library_query)
@@ -145,5 +143,10 @@ app.router.add_static('/', app['config'].get('GENERAL', 'Frontend'))
 app.on_shutdown.append(websocket_shutdown)
 app.on_shutdown.append(broadcaster_shutdown)
 
+if app['config'].getboolean('GENERAL', 'Debug'):
+    logging.basicConfig(level=logging.DEBUG)
+
 app['broadcaster'].start()
-web.run_app(app, host='127.0.0.1', port=8080)
+web.run_app(app,
+            host=app['config'].get('GENERAL', 'Address'),
+            port=app['config'].getint('GENERAL', 'Port'))

@@ -42,7 +42,8 @@ We will also assume that nginx will run as the `www` user.
 
    1. In the `[GENERAL]` section change `Library` to the music library.
       If you're testing the software and you want to have the frontend served
-      at URL `/` change also `Frontend` to its path.
+      at URL `/` change also `Frontend` to its path. If you want to change the
+      socket AirHead will bind to set the `Address` and `Port` variables.
    2. In the `[ICECAST]` section change `Host`, `Port`, `Username` and
       `password` to reflect your Icecast configuration. `Mount` will be the
       used Icecast mount and does not require a leading slash.
