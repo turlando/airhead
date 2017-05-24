@@ -76,7 +76,7 @@ class Library:
         return uuid
 
     def remove(self, uuid):
-        self.remove(uuid)
+        self._remove(uuid)
 
         path = self.get_path(uuid)
         try:
@@ -86,11 +86,11 @@ class Library:
 
     def query(self, q=None):
         if not q:
-            return self._meta
+            return list(self._meta.keys())
         else:
-            return {
-                uuid: tags
+            return [
+                uuid
                 for uuid, tags in self._meta.items()
                 if any(q.lower() in tag.lower()
                        for tag in tags.values())
-            }
+            ]

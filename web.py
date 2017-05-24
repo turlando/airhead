@@ -46,10 +46,10 @@ async def library_query(request):
     except KeyError:
         q = None
 
-    tracks = app['library'].query(q).keys()
+    tracks = app['library'].query(q)
     return web.json_response({
         'status': 'success',
-        'tracks': list(tracks)
+        'tracks': tracks
     })
 
 
