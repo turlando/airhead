@@ -41,7 +41,7 @@ def _get_tags(f):
     try:
         get_tags = CODECS[codec]
     except KeyError as e:
-        raise IllegalCodecError() from e
+        raise IllegalCodecError from e
     else:
         tags = get_tags(media_file)
 
@@ -63,7 +63,7 @@ def _run_ffmpeg(in_, out, exe='ffmpeg'):
 
 def transcode(library, path, uuid, delete=False):
     track = {uuid: _get_tags(path)}
-        
+
     def worker():
         dest_path = library.get_path(uuid)
         _run_ffmpeg(path, dest_path)

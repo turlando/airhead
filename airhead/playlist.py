@@ -55,7 +55,7 @@ class Playlist(queue.Queue):
             try:
                 self.queue.remove(item)
             except ValueError as e:
-                raise TrackNotFoundError() from e
+                raise TrackNotFoundError from e
 
             if self._notify:
                 self._notify()

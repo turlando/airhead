@@ -71,7 +71,7 @@ class Library:
         try:
             tags = self._meta[uuid]
         except KeyError as e:
-            raise TrackNotFoundError() from e
+            raise TrackNotFoundError from e
         else:
             tags['uuid'] = uuid
             return tags

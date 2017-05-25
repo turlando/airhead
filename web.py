@@ -2,7 +2,6 @@ import aiohttp
 from aiohttp import web
 
 import logging
-
 from tempfile import NamedTemporaryFile as TemporaryFile
 
 from airhead.config import get_config
@@ -10,9 +9,6 @@ from airhead.library import Library, TrackNotFoundError
 from airhead.playlist import Playlist, DuplicateTrackError
 from airhead.transcoder import IllegalCodecError
 from airhead.broadcaster import Broadcaster
-
-
-logger = logging.getLogger(__name__)
 
 
 async def store_file(reader):
@@ -59,11 +55,13 @@ async def library_get(request):
 
     try:
         track = app['library'].get_tags(uuid)
+
     except TrackNotFoundError as e:
         return web.json_response({
             'error': 'uuid_not_valid',
             'msg': 'No track found with such UUID.'
         }, status=400)
+
     else:
         return web.json_response(track, status=200)
 
@@ -74,16 +72,19 @@ async def library_add(request):
 
     try:
         track = app['library'].add(path, delete=True)
+
     except FileNotFoundError:
         return web.json_response({
             'error': 'upload_failed',
             'msg': 'This is strange.'
         }, status=500)
+
     except IllegalCodecError as e:
         return web.json_response({
             'error': 'illegal_codec',
             'msg': 'This kind of file is not supported.'
         }, status=400)
+
     else:
         return web.json_response({'track': track}, status=200)
 
@@ -96,33 +97,39 @@ async def playlist_query(request):
 
 
 async def playlist_add(request):
-    logger.debug("Adding to playlist")
     uuid = request.match_info['uuid']
+
     try:
         app['playlist'].put(uuid)
+
     except TrackNotFoundError:
         return web.json_response({
             'error': 'track_not_found',
             'msg': 'No track found with such UUID.'
         }, status=400)
+
     except DuplicateTrackError:
         return web.json_response({
             'error': 'duplicate',
             'msg': 'The track is already present in the playlist.'
         }, status=400)
+
     else:
         return web.json_response({}, status=200)
 
 
 async def playlist_remove(request):
     uuid = request.match_info['uuid']
+
     try:
         app['playlist'].remove(uuid)
+
     except TrackNotFoundError:
         return web.json_response({
             'error': 'track_not_found',
             'msg': 'No track found with such UUID.'
         }, status=400)
+
     else:
         return web.json_response({}, status=200)
 
@@ -145,7 +152,6 @@ async def websocket(request):
         pass
 
     await websocket_shutdown(app, ws)
-
     return ws
 
 
