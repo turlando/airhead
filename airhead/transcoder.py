@@ -23,25 +23,29 @@ def _id3_tags(f):
     }
 
 
+CODECS = {
+    OggVorbis: _vorbis_tags,
+    FLAC: _vorbis_tags,
+    MP3: _id3_tags
+}
+
+
+class IllegalCodecError(Exception):
+    pass
+
+
 def _get_tags(f):
     media_file = mutagen.File(str(f))
     codec = type(media_file)
 
     try:
         get_tags = CODECS[codec]
-    except KeyError:
-        raise Exception("Codec not supported.")
+    except KeyError as e:
+        raise IllegalCodecError() from e
     else:
         tags = get_tags(media_file)
 
     return tags
-
-
-CODECS = {
-    OggVorbis: _vorbis_tags,
-    FLAC: _vorbis_tags,
-    MP3: _id3_tags
-}
 
 
 def _run_ffmpeg(in_, out, exe='ffmpeg'):
@@ -58,9 +62,9 @@ def _run_ffmpeg(in_, out, exe='ffmpeg'):
 
 
 def transcode(library, path, uuid, delete=False):
+    track = {uuid: _get_tags(path)}
+        
     def worker():
-        track = {uuid: _get_tags(path)}
-
         dest_path = library.get_path(uuid)
         _run_ffmpeg(path, dest_path)
 

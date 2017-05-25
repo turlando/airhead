@@ -6,7 +6,12 @@ import json
 from airhead.transcoder import transcode
 
 
+class TrackNotFoundError(Exception):
+    pass
+
+
 META_FILE = 'metadata.json'
+MEDIA_SUFFIX = '.ogg'
 
 
 class Library:
@@ -60,10 +65,16 @@ class Library:
         self._lock.release()
 
     def get_path(self, uuid):
-        return self._path.joinpath(uuid).with_suffix('.ogg')
+        return self._path.joinpath(uuid).with_suffix(MEDIA_SUFFIX)
 
     def get_tags(self, uuid):
-        return self._meta[uuid]
+        try:
+            tags = self._meta[uuid]
+        except KeyError as e:
+            raise TrackNotFoundError() from e
+        else:
+            tags['uuid'] = uuid
+            return tags
 
     def add(self, path, delete=False):
         path = Path(path).resolve()

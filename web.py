@@ -6,8 +6,9 @@ import logging
 from tempfile import NamedTemporaryFile as TemporaryFile
 
 from airhead.config import get_config
-from airhead.library import Library
-from airhead.playlist import Playlist, DuplicateError
+from airhead.library import Library, TrackNotFoundError
+from airhead.playlist import Playlist, DuplicateTrackError
+from airhead.transcoder import IllegalCodecError
 from airhead.broadcaster import Broadcaster
 
 
@@ -44,40 +45,54 @@ async def library_query(request):
     try:
         q = request.query['q']
     except KeyError:
+        # If the request URL has not the '?q=<query>' parameter
+        # catch the error and set q to None in order to call
+        # Library.query(q=None) and get all the stored tracks.
         q = None
 
     tracks = app['library'].query(q)
-    return web.json_response({
-        'status': 'success',
-        'tracks': tracks
-    })
+    return web.json_response({'tracks': tracks}, status=200)
 
 
 async def library_get(request):
     uuid = request.match_info['uuid']
-    return web.json_response({
-        'status': 'success',
-        'track': app['library'].get_tags(uuid)
-    })
+
+    try:
+        track = app['library'].get_tags(uuid)
+    except TrackNotFoundError as e:
+        return web.json_response({
+            'error': 'uuid_not_valid',
+            'msg': 'No track found with such UUID.'
+        }, status=400)
+    else:
+        return web.json_response(track, status=200)
 
 
 async def library_add(request):
     reader = await request.multipart()
     path = await store_file(reader)
 
-    uuid = app['library'].add(path, delete=True)
-    return web.json_response({
-        'status': 'success',
-        'uuid': uuid
-    })
+    try:
+        track = app['library'].add(path, delete=True)
+    except FileNotFoundError:
+        return web.json_response({
+            'error': 'upload_failed',
+            'msg': 'This is strange.'
+        }, status=500)
+    except IllegalCodecError as e:
+        return web.json_response({
+            'error': 'illegal_codec',
+            'msg': 'This kind of file is not supported.'
+        }, status=400)
+    else:
+        return web.json_response({'track': track}, status=200)
 
 
 async def playlist_query(request):
     return web.json_response({
-        'status': 'success',
         'current': app['playlist'].current,
         'next': app['playlist'].next_
-    })
+    }, status=200)
 
 
 async def playlist_add(request):
@@ -85,20 +100,39 @@ async def playlist_add(request):
     uuid = request.match_info['uuid']
     try:
         app['playlist'].put(uuid)
-    except DuplicateError:
-        return web.json_response({'status': 'duplicate'})
+    except TrackNotFoundError:
+        return web.json_response({
+            'error': 'track_not_found',
+            'msg': 'No track found with such UUID.'
+        }, status=400)
+    except DuplicateTrackError:
+        return web.json_response({
+            'error': 'duplicate',
+            'msg': 'The track is already present in the playlist.'
+        }, status=400)
     else:
-        return web.json_response({'status': 'success'})
+        return web.json_response({}, status=200)
 
 
 async def playlist_remove(request):
     uuid = request.match_info['uuid']
     try:
         app['playlist'].remove(uuid)
-    except KeyError:
-        return web.json_response({'status': 'error'})
+    except TrackNotFoundError:
+        return web.json_response({
+            'error': 'track_not_found',
+            'msg': 'No track found with such UUID.'
+        }, status=400)
     else:
-        return web.json_response({'status': 'success'})
+        return web.json_response({}, status=200)
+
+
+async def websocket_shutdown(app, ws=None):
+    if ws:
+        ws.close(code=aiohttp.WSCloseCode.GOING_AWAY)
+    else:
+        for client in app['websockets']:
+            await client.close(code=aiohttp.WSCloseCode.GOING_AWAY)
 
 
 async def websocket(request):
@@ -113,14 +147,6 @@ async def websocket(request):
     await websocket_shutdown(app, ws)
 
     return ws
-
-
-async def websocket_shutdown(app, ws=None):
-    if ws:
-        ws.close(code=aiohttp.WSCloseCode.GOING_AWAY)
-    else:
-        for client in app['websockets']:
-            await client.close(code=aiohttp.WSCloseCode.GOING_AWAY)
 
 
 def broadcast_library_update():

@@ -1,7 +1,8 @@
 import queue
+from airhead.library import TrackNotFoundError
 
 
-class DuplicateError(Exception):
+class DuplicateTrackError(Exception):
     pass
 
 
@@ -29,13 +30,17 @@ class Playlist(queue.Queue):
 
     def _put(self, item):
         if item not in self.queue and item != self._current:
+            # We call this to generate a TrackNotFoundError if a track with
+            # such UUID is not present.
+            self._library.get_tags(item)
+
             self.queue.append(item)
 
             if self._notify:
                 self._notify()
 
         else:
-            raise DuplicateError
+            raise DuplicateTrackError
 
     @property
     def current(self):
@@ -47,7 +52,10 @@ class Playlist(queue.Queue):
 
     def remove(self, item):
         with self.mutex:
-            self.queue.remove(item)
+            try:
+                self.queue.remove(item)
+            except ValueError as e:
+                raise TrackNotFoundError() from e
 
             if self._notify:
                 self._notify()
