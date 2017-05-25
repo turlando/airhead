@@ -54,7 +54,7 @@ async def library_get(request):
     uuid = request.match_info['uuid']
 
     try:
-        track = app['library'].get_tags(uuid)
+        track = app['library'].get_track(uuid)
 
     except TrackNotFoundError as e:
         return web.json_response({

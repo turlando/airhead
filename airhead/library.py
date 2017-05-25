@@ -67,7 +67,7 @@ class Library:
     def get_path(self, uuid):
         return self._path.joinpath(uuid).with_suffix(MEDIA_SUFFIX)
 
-    def get_tags(self, uuid):
+    def get_track(self, uuid):
         try:
             tags = self._meta[uuid]
         except KeyError as e:
@@ -96,11 +96,11 @@ class Library:
 
     def query(self, q=None):
         if not q:
-            return list(self._meta.keys())
+            return list(self._meta.values())
         else:
             return [
-                uuid
-                for uuid, tags in self._meta.items()
+                track
+                for track in self._meta.values()
                 if any(q.lower() in tag.lower()
-                       for tag in tags.values())
+                       for tag in track.values())
             ]

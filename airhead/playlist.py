@@ -32,7 +32,7 @@ class Playlist(queue.Queue):
         if item not in self.queue and item != self._current:
             # We call this to generate a TrackNotFoundError if a track with
             # such UUID is not present.
-            self._library.get_tags(item)
+            self._library.get_track(item)
 
             self.queue.append(item)
 
@@ -44,11 +44,13 @@ class Playlist(queue.Queue):
 
     @property
     def current(self):
-        return self._current
+        if self._current is not None:
+            return self._library.get_track(self._current)
 
     @property
     def next_(self):
-        return list(self.queue)
+        return [self._library.get_track(uuid)
+                for uuid in self.queue]
 
     def remove(self, item):
         with self.mutex:
