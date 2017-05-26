@@ -34,7 +34,7 @@ class Library:
                 self._meta = json.load(fp)
 
     @contextmanager
-    def handle_changes(self):
+    def update_meta(self):
         self._lock.acquire()
 
         yield
@@ -63,17 +63,17 @@ class Library:
             raise FileNotFoundError("No such file:", str(in_path))
 
         uuid = str(uuid4())
-        dest_path = self.get_path(uuid)
+        out_path = self.get_path(uuid)
 
         def on_complete(track):
-            with self.handle_changes():
+            with self.update_meta():
                 self._meta.update(track)
 
-        transcode(in_path, dest_path, uuid, on_complete, delete=delete)
+        transcode(in_path, out_path, uuid, on_complete, delete=delete)
         return uuid
 
     def remove(self, uuid):
-        with self.handle_changes():
+        with self.update_meta():
             self._meta.pop(uuid)
 
         try:

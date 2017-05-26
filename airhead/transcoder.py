@@ -61,11 +61,11 @@ def _run_ffmpeg(in_, out, exe='ffmpeg'):
     ff.run()
 
 
-def transcode(in_path, dest_path, uuid, on_complete, delete=False):
+def transcode(in_path, out_path, uuid, on_complete, delete=False):
     track = {uuid: _get_tags(in_path)}
 
     def worker():
-        _run_ffmpeg(in_path, dest_path)
+        _run_ffmpeg(in_path, out_path)
 
         if delete:
             in_path.unlink()
