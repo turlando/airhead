@@ -58,7 +58,7 @@ async def library_get(request):
 
     except TrackNotFoundError as e:
         return web.json_response({
-            'error': 'uuid_not_valid',
+            'err': 'uuid_not_valid',
             'msg': 'No track found with such UUID.'
         }, status=400)
 
@@ -75,13 +75,13 @@ async def library_add(request):
 
     except FileNotFoundError:
         return web.json_response({
-            'error': 'upload_failed',
+            'err': 'upload_failed',
             'msg': 'This is strange.'
         }, status=500)
 
     except IllegalCodecError as e:
         return web.json_response({
-            'error': 'illegal_codec',
+            'err': 'illegal_codec',
             'msg': 'This kind of file is not supported.'
         }, status=400)
 
@@ -104,13 +104,13 @@ async def playlist_add(request):
 
     except TrackNotFoundError:
         return web.json_response({
-            'error': 'track_not_found',
+            'err': 'track_not_found',
             'msg': 'No track found with such UUID.'
         }, status=400)
 
     except DuplicateTrackError:
         return web.json_response({
-            'error': 'duplicate',
+            'err': 'duplicate',
             'msg': 'The track is already present in the playlist.'
         }, status=400)
 
@@ -126,7 +126,7 @@ async def playlist_remove(request):
 
     except TrackNotFoundError:
         return web.json_response({
-            'error': 'track_not_found',
+            'err': 'track_not_found',
             'msg': 'No track found with such UUID.'
         }, status=400)
 

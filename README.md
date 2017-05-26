@@ -195,7 +195,7 @@ This method allows to get all tracks or to search trough the library.
     * **Content**:
       ```
       {
-          "error": "uuid_not_valid",
+          "err": "uuid_not_valid",
           "msg": "No track found with such UUID."
       }
       ```
@@ -220,7 +220,7 @@ This method allows to get all tracks or to search trough the library.
     * **Content**: 
       ```
       {
-          "error": "upload_failed",
+          "err": "upload_failed",
           "msg": "This is strange."
       }
       ```
@@ -229,7 +229,7 @@ This method allows to get all tracks or to search trough the library.
     * **Content**: 
       ```
       {
-          "error": "illegal_codec",
+          "err": "illegal_codec",
           "msg": "This kind of file is not supported."
       }
       ```
@@ -287,7 +287,7 @@ This method allows to get all tracks or to search trough the library.
     * **Content**:
       ```
       {
-          "error": "track_not_found",
+          "err": "track_not_found",
           "msg": "No track found with such UUID."
       }
       ```
@@ -296,7 +296,7 @@ This method allows to get all tracks or to search trough the library.
     * **Content**:
       ```
       {
-          "error": "duplicate",
+          "err": "duplicate",
           "msg": "The track is already present in the playlist."
       }
       ```
@@ -313,7 +313,7 @@ This method allows to get all tracks or to search trough the library.
     * **Content**:
       ```
       {
-          "error": "track_not_found",
+          "err": "track_not_found",
           "msg": "No track found with such UUID."
       }
       ```
