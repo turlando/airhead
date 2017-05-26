@@ -85,11 +85,14 @@ class Library:
 
     def query(self, q=None):
         if not q:
-            return list(self._meta.values())
+            return [
+                self.get_track(uuid)
+                for uuid in self._meta.keys()
+            ]
         else:
             return [
-                track
-                for track in self._meta.values()
+                self.get_track(uuid)
+                for uuid, tags in self._meta.items()
                 if any(q.lower() in tag.lower()
-                       for tag in track.values())
+                       for tag in tags.values())
             ]
