@@ -61,17 +61,16 @@ def _run_ffmpeg(in_, out, exe='ffmpeg'):
     ff.run()
 
 
-def transcode(library, path, uuid, delete=False):
-    track = {uuid: _get_tags(path)}
+def transcode(in_path, dest_path, uuid, on_complete, delete=False):
+    track = {uuid: _get_tags(in_path)}
 
     def worker():
-        dest_path = library.get_path(uuid)
-        _run_ffmpeg(path, dest_path)
+        _run_ffmpeg(in_path, dest_path)
 
         if delete:
-            path.unlink()
+            in_path.unlink()
 
-        library._add(track)
+        on_complete(track)
 
     t = Thread(target=worker)
     t.start()

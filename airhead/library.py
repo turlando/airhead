@@ -1,6 +1,7 @@
 from pathlib import Path
 from threading import Lock
 from uuid import uuid4
+from contextlib import contextmanager
 import json
 
 from airhead.transcoder import transcode
@@ -15,7 +16,7 @@ MEDIA_SUFFIX = '.ogg'
 
 
 class Library:
-    def __init__(self, path, notify=None):
+    def __init__(self, path, notify=lambda: None):
         self._path = Path(path).resolve()
         if not self._path.is_dir():
             raise FileNotFoundError("No such directory:", str(self._path))
@@ -25,43 +26,23 @@ class Library:
             self._meta_path.touch()
 
         self._notify = notify
-
         self._lock = Lock()
         self._meta = {}
 
         if self._meta_path.stat().st_size:
-            self._load()
+            with self._meta_path.open() as fp:
+                self._meta = json.load(fp)
 
-    def _load(self):
-        "Loads tags to self._meta from metadata.json."
-        with self._meta_path.open() as fp:
-            self._meta = json.load(fp)
+    @contextmanager
+    def handle_changes(self):
+        self._lock.acquire()
 
-    def _save(self):
-        "Flushes updates from self._meta to metadata.json."
+        yield
+
         with self._meta_path.open(mode='w+') as fp:
             json.dump(self._meta, fp)
 
-    def _add(self, track):
-        self._lock.acquire()
-
-        self._meta.update(track)
-        self._save()
-
-        if self._notify:
-            self._notify()
-
-        self._lock.release()
-
-    def _remove(self, uuid):
-        self._lock.acquire()
-
-        self._meta.pop(uuid)
-        self._save()
-
-        if self._notify:
-            self._notify()
-
+        self._notify()
         self._lock.release()
 
     def get_path(self, uuid):
@@ -77,20 +58,26 @@ class Library:
             return tags
 
     def add(self, path, delete=False):
-        path = Path(path).resolve()
-        if not path.is_file():
-            raise FileNotFoundError("No such file:", str(path))
+        in_path = Path(path).resolve()
+        if not in_path.is_file():
+            raise FileNotFoundError("No such file:", str(in_path))
 
         uuid = str(uuid4())
-        transcode(self, path, uuid, delete=delete)
+        dest_path = self.get_path(uuid)
+
+        def on_complete(track):
+            with self.handle_changes():
+                self._meta.update(track)
+
+        transcode(in_path, dest_path, uuid, on_complete, delete=delete)
         return uuid
 
     def remove(self, uuid):
-        self._remove(uuid)
+        with self.handle_changes():
+            self._meta.pop(uuid)
 
-        path = self.get_path(uuid)
         try:
-            path.unlink()
+            self.get_path(uuid).unlink()
         except FileNotFoundError:
             pass
 
