@@ -73,11 +73,13 @@ class Library:
         return uuid
 
     def remove(self, uuid):
+        path = self.get_path(uuid)
+
         with self.update_meta():
             self._meta.pop(uuid)
 
         try:
-            self.get_path(uuid).unlink()
+            path.unlink()
         except FileNotFoundError:
             pass
 
