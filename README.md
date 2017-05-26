@@ -270,6 +270,8 @@ This method allows to get all tracks or to search trough the library.
         ]
     }
     ```
+* **Sample call**:
+  `curl "http://127.0.0.1:8080/api/playlist"`
 * **Notes**:
   `current` is `none` if no tracks is playing. `next` is an empty list if there
   are no tracks next.
@@ -300,6 +302,9 @@ This method allows to get all tracks or to search trough the library.
           "msg": "The track is already present in the playlist."
       }
       ```
+* **Sample call**:
+  `curl -X PUT "http://127.0.0.1:8080/api/playlist/c9bc6e46-3078-45fd-a7e1-0d5c21ce2d59"`
+
 ### Remove a track from the playlist
 
 * **URL**: `/api/playlist/{uuid}`
@@ -317,3 +322,5 @@ This method allows to get all tracks or to search trough the library.
           "msg": "No track found with such UUID."
       }
       ```
+* **Sample call**:
+  `curl -X DELETE "http://127.0.0.1:8080/api/playlist/c9bc6e46-3078-45fd-a7e1-0d5c21ce2d59"`
