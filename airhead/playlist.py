@@ -23,7 +23,7 @@ class Playlist(queue.Queue):
         return item
 
     def get(self, *args, **kwargs):
-        if not self.qsize():
+        if not self._qsize():
             self._current = None
 
         return queue.Queue.get(self, *args, **kwargs)

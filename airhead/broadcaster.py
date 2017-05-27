@@ -1,4 +1,5 @@
 from threading import Thread, Event
+from queue import Empty
 import shouty
 from airhead.config import idle_media
 
@@ -27,12 +28,13 @@ class Broadcaster(Thread):
     def run(self):
         with shouty.connect(**self._params) as connection:
             while not self._stop_.isSet():
+                try:
+                    uuid = self._playlist.get(True)
 
-                if self._playlist.empty():
+                except Empty:
                     connection.send_file(idle_media)
 
                 else:
-                    uuid = self._playlist.get(True)
                     path = self._playlist._library.get_path(uuid)
                     connection.send_file(str(path))
 
