@@ -18,7 +18,7 @@ def _vorbis_tags(f):
 def _id3_tags(f):
     return {
         'title': '; '.join(f.tags['TIT2']),
-        'artist': '; '.join(f.tags['TOPE']),
+        'artist': '; '.join(f.tags['TPE1']),
         'album': '; '.join(f.tags['TALB'])
     }
 
