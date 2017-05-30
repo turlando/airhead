@@ -29,7 +29,7 @@ class Broadcaster(Thread):
         with shouty.connect(**self._params) as connection:
             while not self._stop_.isSet():
                 try:
-                    uuid = self._playlist.get(True)
+                    uuid = self._playlist.get()
 
                 except Empty:
                     connection.send_file(idle_media)

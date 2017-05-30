@@ -91,8 +91,8 @@ async def library_add(request):
 
 async def playlist_query(request):
     return web.json_response({
-        'current': app['playlist'].current,
-        'next': app['playlist'].next_
+        'current': app['playlist'].current_track,
+        'next': app['playlist'].next_tracks
     }, status=200)
 
 
