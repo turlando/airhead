@@ -57,6 +57,9 @@ class Library:
             tags['uuid'] = uuid
             return tags
 
+    def __contains__(self, uuid):
+        return uuid in self._meta
+
     def add(self, path, delete=False):
         in_path = Path(path).resolve()
         if not in_path.is_file():
