@@ -13,6 +13,18 @@ class Playlist:
         self._current = None
         self._queue = queue.Queue()
 
+    @property
+    def current_track(self):
+        if self._current is not None:
+            return self._library.get_track(self._current)
+        else:
+            return None
+
+    @property
+    def next_tracks(self):
+        return [self._library.get_track(uuid)
+                for uuid in self._queue.queue]
+
     def get(self):
         if self._queue.empty():
             self._current = None
@@ -34,22 +46,10 @@ class Playlist:
         else:
             raise DuplicateTrackError
 
-    @property
-    def current_track(self):
-        if self._current is not None:
-            return self._library.get_track(self._current)
-        else:
-            return None
-
-    @property
-    def next_tracks(self):
-        return [self._library.get_track(uuid)
-                for uuid in self._queue.queue]
-
     def remove(self, item):
-        with self.mutex:
+        with self._queue.mutex:
             try:
-                self._queue.remove(item)
+                self._queue.queue.remove(item)
             except ValueError as e:
                 raise TrackNotFoundError from e
 
