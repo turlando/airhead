@@ -6,6 +6,10 @@ class DuplicateTrackError(Exception):
     pass
 
 
+class EmptyPlaylist(Exception):
+    pass
+
+
 class Playlist:
     def __init__(self, library, notify=lambda: None):
         self._library = library
@@ -25,15 +29,20 @@ class Playlist:
         return [self._library.get_track(uuid)
                 for uuid in self._queue.queue]
 
-    def get(self):
-        if self._queue.empty():
+    def pop(self):
+        try:
+            item = self._queue.get(block=False)
+
+        except queue.Empty as e:
             self._current = None
+            raise EmptyPlaylist from e
 
-        item = self._queue.get(block=False)
-        self._current = item
-        self._notify()
+        else:
+            self._current = item
+            return item
 
-        return item
+        finally:
+            self._notify()
 
     def put(self, item):
         if item not in self._queue.queue and item != self._current:
