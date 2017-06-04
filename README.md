@@ -26,20 +26,29 @@ We will assume the following paths:
  * REST API configuration: `/etc/airhead`
  * Web frontend: `/var/www/airhead`
 
-We will also assume that nginx will run as the `www` user.
+We will also assume that nginx will run as the `www` user and AirHead will run
+as a new Unix account you should have already created named `airhead`.
+
+Some commands requires root privileges and are marked by the use of `sudo`. If
+`sudo` is not available in your system remember that you need to run the said
+command as root.
 
 ### REST API
 
-1. Give yourself root privileges with either `su -` or `sudo su -`
+1. Create the AirHead directory with proper permissions.
 
-2. Clone this repo in `/opt/airhead` with
+       sudo mkdir /opt/airhead
+       sudo chown airhead /opt/airhead
+
+2. Switch to the airhead account with `su - airhead` or `sudo su - airhead` and
+   clone this repo in `/opt/airhead` with
 
        git clone --depth=1 https://github.com/turlando/airhead.git /opt/airhead
 
 3. Copy and edit the configuration
 
-       mkdir /etc/airhead
-       cp -p /opt/airhead/conf/airhead.ini.example /etc/airhead/airhead.ini
+       sudo mkdir /etc/airhead
+       sudo cp -p /opt/airhead/conf/airhead.ini.example /etc/airhead/airhead.ini
 
    Edit `/etc/airhead/airhead.ini` with any text editor.
    **Remember to always use absolute paths.**
@@ -69,6 +78,12 @@ We will also assume that nginx will run as the `www` user.
     Run the software with:
         python web.py
 
+Note: as of now there is no way to keep the software running in a daemonized
+way. The ugliest and speedy way is to run it inside a screen/tmux session. We
+suggest not to do it. The best way would be to run it using your init system.
+Currently we don't provide init script, but once the software is stable we will
+definitely do.
+
 ### Web frontend
 
 1. Clone the `airhead-cljs` repo somewhere
@@ -82,9 +97,9 @@ We will also assume that nginx will run as the `www` user.
 
 3. Move it to the public httpd path
 
-       mkdir /var/www/airhead
-       cp -pr /tmp/airhead-cljs/output/* /var/www/airhead
-       chown -R www:www /var/www/airhead
+       sudo mkdir /var/www/airhead
+       sudo cp -pr /tmp/airhead-cljs/output/* /var/www/airhead
+       sudo chown -R www:www /var/www/airhead
 
 ### Configure nginx
 
@@ -109,7 +124,6 @@ Adjust your server section as follows:
             proxy_http_version 1.1;
             proxy_set_header Upgrade $http_upgrade;
             proxy_set_header Connection "upgrade";
-
         }
 
         location  /  {
