@@ -8,7 +8,9 @@ will be streamed out to an Icecast server.
 ## Deploy
 
 A complete deploy includes both REST APIs (this repo) and a frontend. As of now
-the only one available is [airhead-cljs](https://github.com/edne/airhead-cljs).
+the only one available is
+[airhead-frontend](https://github.com/edne/airhead-frontend) by
+[edne](https://github.com/edne).
 This document will walk you trough everything needed for an usable installation.
 
 Before you start make sure you can satisfy the following dependencies:
@@ -86,19 +88,19 @@ definitely do.
 
 ### Web frontend
 
-1. Clone the `airhead-cljs` repo somewhere
+1. Clone the `airhead-frontend` repo somewhere
 
-       git clone https://github.com/edne/airhead-cljs.git /tmp/airhead-cljs
+       git clone https://github.com/edne/airhead-frontend.git /tmp/airhead-frontend
 
 2. Compile it
 
-       cd /tmp/airhead-cljs
+       cd /tmp/airhead-frontend
        lein release
 
 3. Move it to the public httpd path
 
        sudo mkdir /var/www/airhead
-       sudo cp -pr /tmp/airhead-cljs/output/* /var/www/airhead
+       sudo cp -pr /tmp/airhead-frontend/output/* /var/www/airhead
        sudo chown -R www:www /var/www/airhead
 
 ### Configure nginx
