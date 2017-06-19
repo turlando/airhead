@@ -137,9 +137,11 @@ async def playlist_remove(request):
 async def websocket_shutdown(app, ws=None):
     if ws:
         ws.close(code=aiohttp.WSCloseCode.GOING_AWAY)
+        app['websockets'].remove(ws)
     else:
         for client in app['websockets']:
             await client.close(code=aiohttp.WSCloseCode.GOING_AWAY)
+            app['websockets'].remove(client)
 
 
 async def websocket(request):
