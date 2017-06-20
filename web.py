@@ -1,4 +1,3 @@
-import aiohttp
 from aiohttp import web
 
 import logging
@@ -9,6 +8,8 @@ from airhead.library import Library, TrackNotFoundError
 from airhead.playlist import Playlist, DuplicateTrackError
 from airhead.transcoder import IllegalCodecError
 from airhead.broadcaster import Broadcaster
+
+log = logging.getLogger('airhead')
 
 
 async def store_file(reader):
@@ -134,27 +135,26 @@ async def playlist_remove(request):
         return web.json_response({}, status=200)
 
 
-async def websocket_shutdown(app, ws=None):
-    if ws:
-        ws.close(code=aiohttp.WSCloseCode.GOING_AWAY)
-        app['websockets'].remove(ws)
-    else:
-        for client in app['websockets']:
-            await client.close(code=aiohttp.WSCloseCode.GOING_AWAY)
-            app['websockets'].remove(client)
+async def websocket_shutdown(app):
+    log.debug("Disconnecting {} clients.".format(len(app['websockets'])))
+    for client in app['websockets']:
+        await client.close()
 
 
 async def websocket(request):
     ws = web.WebSocketResponse()
     await ws.prepare(request)
 
-    request.app['websockets'].add(ws)
+    try:
+        log.debug("Websocket client connected.")
+        request.app['websockets'].append(ws)
+        async for msg in ws:
+            pass
+        return ws
 
-    async for msg in ws:
-        pass
-
-    await websocket_shutdown(app, ws)
-    return ws
+    finally:
+        log.debug("Websocket client disconnected.")
+        request.app['websockets'].remove(ws)
 
 
 def broadcast_library_update():
@@ -178,7 +178,7 @@ app['library'] = Library(app['config'].get('GENERAL', 'Library'),
                          notify=broadcast_library_update)
 app['playlist'] = Playlist(app['library'], notify=broadcast_playlist_update)
 app['broadcaster'] = Broadcaster(app['config']['ICECAST'], app['playlist'])
-app['websockets'] = set()
+app['websockets'] = list()
 
 app.router.add_route('GET', '/api/info', info)
 app.router.add_route('GET', '/api/library', library_query)
