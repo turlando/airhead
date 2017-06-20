@@ -142,7 +142,7 @@ async def websocket_shutdown(app):
 
 
 async def websocket(request):
-    ws = web.WebSocketResponse(autoping=True)
+    ws = web.WebSocketResponse()
     await ws.prepare(request)
 
     try:
