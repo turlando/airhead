@@ -1,4 +1,5 @@
 import queue
+import random
 from airhead.library import TrackNotFoundError
 
 
@@ -10,10 +11,17 @@ class EmptyPlaylist(Exception):
     pass
 
 
+def random_track(library):
+    track = random.choice(library.query())
+    return track['uuid']
+
+
 class Playlist:
-    def __init__(self, library, notify=lambda: None):
+    def __init__(self, library, notify=lambda: None, auto_dj=False):
         self._library = library
         self._notify = notify
+        self._auto_dj = auto_dj
+
         self._current = None
         self._queue = queue.Queue()
 
@@ -34,8 +42,13 @@ class Playlist:
             item = self._queue.get(block=False)
 
         except queue.Empty as e:
-            self._current = None
-            raise EmptyPlaylist from e
+            if self._auto_dj:
+                track = random_track(self._library)
+                self._current = track
+                return track
+            else:
+                self._current = None
+                raise EmptyPlaylist from e
 
         else:
             self._current = item

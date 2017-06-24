@@ -3,6 +3,7 @@ Debug = True
 Address = 127.0.0.1
 Port = 8080
 Library = /tmp/airhead/library
+AutoDJ = False
 Frontend = /tmp/airhead/frontend
 
 [INFO]

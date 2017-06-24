@@ -174,11 +174,13 @@ def broadcaster_shutdown(app):
 app = web.Application()
 
 app['config'] = get_config()
+app['websockets'] = list()
+
 app['library'] = Library(app['config'].get('GENERAL', 'Library'),
                          notify=broadcast_library_update)
-app['playlist'] = Playlist(app['library'], notify=broadcast_playlist_update)
+app['playlist'] = Playlist(app['library'], notify=broadcast_playlist_update,
+                           auto_dj=app['config'].getboolean('GENERAL', 'AutoDj'))
 app['broadcaster'] = Broadcaster(app['config']['ICECAST'], app['playlist'])
-app['websockets'] = list()
 
 app.router.add_route('GET', '/api/info', info)
 app.router.add_route('GET', '/api/library', library_query)
