@@ -28,13 +28,14 @@ async def store_file(reader):
 
 
 async def info(request):
+    conf = request.app['config']
     return web.json_response({
-        'name': app['config'].get('INFO', 'Name'),
-        'greet_message': app['config'].get('INFO', 'GreetMessage'),
-        'stream_url': "http://{}:{}/{}".format(
-            app['config'].get('ICECAST', 'Host'),
-            app['config'].get('ICECAST', 'Port'),
-            app['config'].get('ICECAST', 'Mount'))
+        'name': conf.get('INFO', 'Name'),
+        'greet_message': conf.get('INFO', 'GreetMessage'),
+        'stream_url': "http://{}:{}/{}"
+                      .format(conf.get('ICECAST', 'Host'),
+                              conf.get('ICECAST', 'Port'),
+                              conf.get('ICECAST', 'Mount'))
     })
 
 
@@ -47,7 +48,7 @@ async def library_query(request):
         # Library.query(q=None) and get all the stored tracks.
         q = None
 
-    tracks = app['library'].query(q)
+    tracks = request.app['library'].query(q)
     return web.json_response({'tracks': tracks}, status=200)
 
 
@@ -55,7 +56,7 @@ async def library_get(request):
     uuid = request.match_info['uuid']
 
     try:
-        track = app['library'].get_track(uuid)
+        track = request.app['library'].get_track(uuid)
 
     except TrackNotFoundError as e:
         return web.json_response({
@@ -72,7 +73,7 @@ async def library_add(request):
     path = await store_file(reader)
 
     try:
-        track = app['library'].add(path, delete=True)
+        track = request.app['library'].add(path, delete=True)
 
     except FileNotFoundError:
         return web.json_response({
@@ -92,8 +93,8 @@ async def library_add(request):
 
 async def playlist_query(request):
     return web.json_response({
-        'current': app['playlist'].current_track,
-        'next': app['playlist'].next_tracks
+        'current': request.app['playlist'].current_track,
+        'next': request.app['playlist'].next_tracks
     }, status=200)
 
 
@@ -101,7 +102,7 @@ async def playlist_add(request):
     uuid = request.match_info['uuid']
 
     try:
-        app['playlist'].put(uuid)
+        request.app['playlist'].put(uuid)
 
     except TrackNotFoundError:
         return web.json_response({
@@ -123,7 +124,7 @@ async def playlist_remove(request):
     uuid = request.match_info['uuid']
 
     try:
-        app['playlist'].remove(uuid)
+        request.app['playlist'].remove(uuid)
 
     except TrackNotFoundError:
         return web.json_response({
@@ -179,7 +180,7 @@ app['websockets'] = list()
 app['library'] = Library(app['config'].get('GENERAL', 'Library'),
                          notify=broadcast_library_update)
 app['playlist'] = Playlist(app['library'], notify=broadcast_playlist_update,
-                           auto_dj=app['config'].getboolean('GENERAL', 'AutoDj'))
+                           auto_dj=app['config'].getboolean('GENERAL', 'AutoDJ'))
 app['broadcaster'] = Broadcaster(app['config']['ICECAST'], app['playlist'])
 
 app.router.add_route('GET', '/api/info', info)
