@@ -1,15 +1,12 @@
 from aiohttp import web
-
-import logging
 from tempfile import NamedTemporaryFile as TemporaryFile
 
 from airhead.config import get_config
+from airhead.logging import init_logging, get_logger
 from airhead.library import Library, TrackNotFoundError
 from airhead.playlist import Playlist, DuplicateTrackError
 from airhead.transcoder import IllegalCodecError
 from airhead.broadcaster import Broadcaster
-
-log = logging.getLogger('airhead')
 
 
 async def store_file(reader):
@@ -137,7 +134,7 @@ async def playlist_remove(request):
 
 
 async def websocket_shutdown(app):
-    log.debug("Disconnecting {} clients.".format(len(app['websockets'])))
+    app['log'].debug("Disconnecting {} clients.".format(len(app['websockets'])))
     for client in app['websockets']:
         await client.close()
 
@@ -147,14 +144,14 @@ async def websocket(request):
     await ws.prepare(request)
 
     try:
-        log.debug("Websocket client connected.")
+        request.app['log'].debug("Websocket client connected.")
         request.app['websockets'].append(ws)
         async for msg in ws:
             pass
         return ws
 
     finally:
-        log.debug("Websocket client disconnected.")
+        request.app['log'].debug("Websocket client disconnected.")
         request.app['websockets'].remove(ws)
 
 
@@ -177,6 +174,10 @@ app = web.Application()
 app['config'] = get_config()
 app['websockets'] = list()
 
+init_logging(app['config'].get('LOGGING', 'Level'),
+             app['config'].get('LOGGING', 'Path'))
+app['log'] = get_logger('web')
+
 app['library'] = Library(app['config'].get('GENERAL', 'Library'),
                          notify=broadcast_library_update)
 app['playlist'] = Playlist(app['library'], notify=broadcast_playlist_update,
@@ -195,11 +196,6 @@ app.router.add_static('/', app['config'].get('GENERAL', 'Frontend'))
 
 app.on_shutdown.append(websocket_shutdown)
 app.on_shutdown.append(broadcaster_shutdown)
-
-if app['config'].getboolean('GENERAL', 'Debug'):
-    logging.basicConfig(level=logging.DEBUG)
-else:
-    logging.basicConfig(level=logging.WARNING)
 
 app['broadcaster'].start()
 web.run_app(app,

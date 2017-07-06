@@ -19,3 +19,7 @@ Mount = airhead
 
 [FFMPEG]
 Exe = /usr/bin/ffmpeg
+
+[LOGGING]
+Level = WARNING
+Path = /tmp/airhead/airhead.log
