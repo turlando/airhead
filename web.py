@@ -133,6 +133,11 @@ async def playlist_remove(request):
         return web.json_response({}, status=200)
 
 
+async def playlist_skip(request):
+    request.app['broadcaster'].skip()
+    return web.json_response({}, status=200)
+
+
 async def websocket_shutdown(app):
     app['log'].debug("Disconnecting {} clients.".format(len(app['websockets'])))
     for client in app['websockets']:
@@ -191,6 +196,7 @@ app.router.add_route('POST', '/api/library', library_add)
 app.router.add_route('GET', '/api/playlist', playlist_query)
 app.router.add_route('PUT', '/api/playlist/{uuid}', playlist_add)
 app.router.add_route('DELETE', '/api/playlist/{uuid}', playlist_remove)
+app.router.add_route('GET', '/api/playlist/skip', playlist_skip)
 app.router.add_route('GET', '/api/ws', websocket)
 app.router.add_static('/', app['config'].get('GENERAL', 'Frontend'))
 
