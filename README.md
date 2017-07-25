@@ -347,3 +347,14 @@ This method allows to get all tracks or to search trough the library.
       ```
 * **Sample call**:
   `curl -X DELETE "http://127.0.0.1:8080/api/playlist/c9bc6e46-3078-45fd-a7e1-0d5c21ce2d59"`
+
+### Skip the current playing track
+
+* **URL**: `/api/playlist/skip`
+* **Method**: `GET`
+* **Success response**:
+  * **Code**: 200
+  * **Content**: `{}`
+
+* **Sample call**:
+  `curl "http://127.0.0.1:8080/api/playlist/skip"`
