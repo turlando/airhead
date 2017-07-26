@@ -4,7 +4,7 @@ from pathlib import Path
 root = logging.getLogger('airhead')
 
 
-def init_logging(level, logfile=None):
+def setup_logging(level, logfile=None):
     try:
         level = getattr(logging, level)
     except AttributeError as e:

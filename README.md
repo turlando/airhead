@@ -50,7 +50,7 @@ command as root.
 3. Copy and edit the configuration
 
        sudo mkdir /etc/airhead
-       sudo cp -p /opt/airhead/conf/airhead.ini.example /etc/airhead/airhead.ini
+       sudo cp -p /opt/airhead/conf/airhead.example.ini /etc/airhead/airhead.ini
 
    Edit `/etc/airhead/airhead.ini` with any text editor.
    **Remember to always use absolute paths.**
@@ -75,10 +75,12 @@ command as root.
        . env/bin/activate # for sh
 
    Then install pip dependencies with:
+
        pip install -r requirements.txt
 
     Run the software with:
-        python web.py
+
+        python api.py
 
 Note: as of now there is no way to keep the software running in a daemonized
 way. The ugliest and speedy way is to run it inside a screen/tmux session. We
@@ -107,7 +109,7 @@ definitely do.
 
 You can test this software without the needing of any HTTP proxy by just
 making the `Frontend` variable in the `[GENERAL]` condifiguration section point
-to the frontend path and running `web.py`.
+to the frontend path and running `api.py`.
 
 If you want a more stable deploy you can make nginx host the frontend and
 reverse the API calls.
@@ -175,7 +177,7 @@ This method allows to get all tracks or to search trough the library.
                 "title": "Notte in Bovisa",
                 "artist": "Calibro 35",
                 "album": "Calibro 35",
-                "uuid": "b3b5099b-63fd-4322-92b8-0346c305f1e6
+                "uuid": "b3b5099b-63fd-4322-92b8-0346c305f1e6"
             },
             {
                 "title": "Drum & Bass Wise (remix)",
