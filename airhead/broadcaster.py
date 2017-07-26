@@ -29,6 +29,9 @@ class Broadcaster(Thread):
     def _send_file(self, connection, file_name):
         with open(file_name, 'rb') as f:
             while True:
+                if self._stop_.is_set():
+                    break
+
                 if self._skip.is_set():
                     self._skip.clear()
                     break
@@ -42,7 +45,10 @@ class Broadcaster(Thread):
 
     def run(self):
         with shouty.connect(**self._params) as connection:
-            while not self._stop_.isSet():
+            while True:
+                if self._stop_.is_set():
+                    break
+
                 try:
                     uuid = self._playlist.pop()
 
@@ -53,9 +59,9 @@ class Broadcaster(Thread):
                     path = self._playlist._library.get_path(uuid)
                     self._send_file(connection, str(path))
 
+    def skip(self):
+        self._skip.set()
+
     def join(self, timeout=0):
         self._stop_.set()
         super(Broadcaster, self).join(timeout)
-
-    def skip(self):
-        self._skip.set()
