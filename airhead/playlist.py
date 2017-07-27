@@ -11,11 +11,6 @@ class EmptyPlaylist(Exception):
     pass
 
 
-def random_track(library):
-    track = random.choice(library.query())
-    return track['uuid']
-
-
 class Playlist:
     def __init__(self, library, notify=lambda: None, auto_dj=False):
         self._library = library
@@ -24,6 +19,7 @@ class Playlist:
 
         self._current = None
         self._queue = queue.Queue()
+        self._played = set()
 
     @property
     def current_track(self):
@@ -37,22 +33,35 @@ class Playlist:
         return [self._library.get_track(uuid)
                 for uuid in self._queue.queue]
 
+    def _choose_track(self):
+        all_tracks = {track['uuid'] for track in self._library.query()}
+
+        if self._played == all_tracks:
+            self._played = set()
+
+        return random.choice(list(all_tracks - self._played))
+
+    def _play_track(self, uuid):
+        self._current = uuid
+        self._played.add(uuid)
+
     def pop(self):
         try:
-            item = self._queue.get(block=False)
+            uuid = self._queue.get(block=False)
 
         except queue.Empty as e:
-            if self._auto_dj:
-                track = random_track(self._library)
-                self._current = track
-                return track
+            # if auto-dj is enabled and the library is not empty
+            if self._auto_dj and self._library.query():
+                uuid = self._choose_track()
+                self._play_track(uuid)
+                return uuid
             else:
                 self._current = None
                 raise EmptyPlaylist from e
 
         else:
-            self._current = item
-            return item
+            self._play_track(uuid)
+            return uuid
 
         finally:
             self._notify()
