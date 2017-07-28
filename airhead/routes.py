@@ -1,8 +1,6 @@
-from airhead.logging import get_logger
 from airhead.rest import info
 from airhead.rest import library_query, library_get, library_add
-from airhead.rest import playlist_query, playlist_add, playlist_remove, \
-                         playlist_skip
+from airhead.rest import playlist_query, playlist_add, playlist_remove
 from airhead.websocket import websocket
 
 
