@@ -14,6 +14,5 @@ def setup_routes(app):
     app.router.add_route('GET', '/api/playlist', playlist_query)
     app.router.add_route('PUT', '/api/playlist/{uuid}', playlist_add)
     app.router.add_route('DELETE', '/api/playlist/{uuid}', playlist_remove)
-    app.router.add_route('GET', '/api/playlist/skip/{uuid}', playlist_skip)
     app.router.add_route('GET', '/api/ws', websocket)
     app.router.add_static('/', app['config'].get('GENERAL', 'Frontend'))
