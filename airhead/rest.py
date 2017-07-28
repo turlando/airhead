@@ -114,8 +114,14 @@ async def playlist_add(request):
 async def playlist_remove(request):
     uuid = request.match_info['uuid']
 
+    playlist = request.app['playlist']
+    broadcaster = request.app['broadcaster']
+
     try:
-        request.app['playlist'].remove(uuid)
+        if uuid == playlist.current_track['uuid']:
+            broadcaster.skip()
+        else:
+            playlist.remove(uuid)
 
     except TrackNotFoundError:
         return json_response({
@@ -125,9 +131,3 @@ async def playlist_remove(request):
 
     else:
         return json_response({}, status=200)
-
-
-async def playlist_skip(request):
-    uuid = request.match_info['uuid']
-    request.app['broadcaster'].skip(uuid)
-    return json_response({}, status=200)
