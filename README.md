@@ -352,11 +352,15 @@ This method allows to get all tracks or to search trough the library.
 
 ### Skip the current playing track
 
-* **URL**: `/api/playlist/skip`
+* **URL**: `/api/playlist/skip/{uuid}`
 * **Method**: `GET`
 * **Success response**:
   * **Code**: 200
   * **Content**: `{}`
 
 * **Sample call**:
-  `curl "http://127.0.0.1:8080/api/playlist/skip"`
+  `curl "http://127.0.0.1:8080/api/playlist/skip/c9bc6e46-3078-45fd-a7e1-0d5c21ce2d59"`
+
+* **Notes**:
+  Where `uuid` is the id of the current playing track, as given by the
+  `/api/playlist` query.

@@ -128,5 +128,6 @@ async def playlist_remove(request):
 
 
 async def playlist_skip(request):
-    request.app['broadcaster'].skip()
+    uuid = request.match_info['uuid']
+    request.app['broadcaster'].skip(uuid)
     return json_response({}, status=200)

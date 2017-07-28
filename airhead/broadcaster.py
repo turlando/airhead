@@ -59,8 +59,9 @@ class Broadcaster(Thread):
                     path = self._playlist._library.get_path(uuid)
                     self._send_file(connection, str(path))
 
-    def skip(self):
-        self._skip.set()
+    def skip(self, uuid):
+        if uuid == self._playlist._current:
+            self._skip.set()
 
     def join(self, timeout=0):
         self._stop_.set()
