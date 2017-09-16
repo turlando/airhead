@@ -4,7 +4,7 @@ from pathlib import Path
 root = logging.getLogger('airhead')
 
 
-def setup_logging(level, logfile=None):
+def _setup_log_level(level):
     try:
         level = getattr(logging, level)
     except AttributeError as e:
@@ -13,14 +13,15 @@ def setup_logging(level, logfile=None):
     else:
         logging.basicConfig(level=level)
 
-    if logfile is not None:
-        logfile = Path(logfile)
-        try:
-            logfile.touch()
-        except Exception as e:
-            raise e
-        else:
-            logging.basicConfig(filename=logfile)
+
+def _setup_log_file(file_):
+    if file_ is not None:
+        logging.basicConfig(filename=file_)
+
+
+def setup_logging(level, logfile=None):
+    _setup_log_level(level)
+    _setup_log_file(logfile)
 
 
 def get_logger(name):
