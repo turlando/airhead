@@ -1,4 +1,0 @@
-aiohttp
-mutagen
-ffmpy
-shouty
