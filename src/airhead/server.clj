@@ -20,7 +20,7 @@
 ;; HANDLERS                                                                   ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn get-info [request]
+(defn- get-info [request]
   (let [info    (-> request :config :info)
         icecast (-> request :config :icecast)]
     (ok-response
@@ -31,13 +31,13 @@
                           ":" (:port icecast)
                           "/" (:mount icecast))})))
 
-(defn get-library [request]
+(defn- get-library [request]
   (let [lib (-> request :library)
         id  (-> request :params :id)
         q   (-> request :params (get "q"))]
     (ok-response
      (cond
-       (utils/not-nil? id)  nil
+       (utils/not-nil? id)  (library/get-track lib id)
        (utils/not-blank? q) {:tracks (library/search lib q)}
        :else                {:tracks (library/search lib)}))))
 
@@ -53,7 +53,7 @@
 
 (compojure/defroutes routes
   (compojure/context "/api" []
-      (compojure/GET "/info" [] get-info)
+    (compojure/GET "/info" [] get-info)
     (compojure/context "/library" []
       (compojure/GET "/" [] get-library)
       (compojure/GET "/:id" [] get-library)

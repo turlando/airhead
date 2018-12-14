@@ -5,17 +5,16 @@
             [airhead.library :as library]
             [airhead.server :as server]))
 
-(defonce ^:static config-file "airhead.edn")
-(defonce ^:static config-dirs ["./"
-                               "/etc/airhead/"
-                               "/usr/local/etc/airhead/"])
+(def ^:private config-file "airhead.edn")
+(def ^:private config-dirs ["./"
+                            "/etc/airhead/"
+                            "/usr/local/etc/airhead/"])
 
 (defn stop!
   [{:keys [config http-server]
     :as   args}]
   (server/stop! http-server)
   nil)
-
 
 (defn start! []
   (let [config-path (utils/find-file-in-dirs config-file config-dirs)

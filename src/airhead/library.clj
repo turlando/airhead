@@ -15,10 +15,13 @@
 
 (defn search
   ([library]
-     (-> library :metadata vals))
+   (-> library :metadata vals))
   ([library query]
    (filter
     #(string/includes?
       (string/lower-case (string/join " " (-> % (dissoc :uuid) vals)))
       (string/lower-case query))
     (->> library :metadata vals))))
+
+(defn get-track [library uuid]
+  (-> library :metadata (get (keyword uuid))))
