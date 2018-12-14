@@ -10,8 +10,7 @@
   :dependencies [[org.clojure/clojure "1.9.0"]
                  [org.clojure/data.json "0.2.6"]
                  [http-kit "2.3.0"]
-                 [ring/ring-core "1.7.1"
-                  :exclusions [commons-codec]]
+                 [ring/ring-core "1.7.1"]
                  [ring/ring-json "0.4.0"]
                  [compojure "1.6.1"]]
 
