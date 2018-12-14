@@ -4,7 +4,7 @@
             [clojure.data.json :as json]
             [airhead.utils :as utils])
   (:import (ealvatag.audio AudioFileIO)
-           (ealvatag.tag FieldKey)))
+           (ealvatag.tag Tag FieldKey)))
 
 (defn- metadata-path [path]
   (str path "/metadata.json"))
@@ -45,13 +45,13 @@
                  path)
       string/trim-newline))
 
-(defn- read-tags [file]
+(defn- read-tags [^java.io.File file]
   (let [codec (read-codec (.getPath file))
         audio (AudioFileIO/readAs file codec)
-        tags  (-> (.getTag audio) .get)]
-    {:title  (-> (.getValue tags FieldKey/TITLE) .get)
-     :artist (-> (.getValue tags FieldKey/ARTIST) .get)
-     :album  (-> (.getValue tags FieldKey/ALBUM) .get)}))
+        tags  ^Tag (.get (.getTag audio))]
+    {:title  (.get (.getValue tags FieldKey/TITLE))
+     :artist (.get (.getValue tags FieldKey/ARTIST))
+     :album  (.get (.getValue tags FieldKey/ALBUM))}))
 
 (defn- transcode! [in out]
   (utils/sh! "ffmpeg"
@@ -62,7 +62,7 @@
              "-q:a:0" "6"
              out))
 
-(defn add [library file]
+(defn add [library ^java.io.File file]
   (let [uuid  (utils/uuid)
         tags* (read-tags file)
         tags  (assoc tags* :uuid uuid)
