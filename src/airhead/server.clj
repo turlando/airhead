@@ -2,6 +2,7 @@
   (:require [clojure.data.json :as json]
             [org.httpkit.server :as server]
             [ring.middleware.params :as middleware.params]
+            [ring.middleware.multipart-params :as middleware.multipart-params]
             [ring.middleware.json :as middleware.json]
             [compojure.core :as compojure]
             [airhead.utils :as utils]
@@ -48,7 +49,13 @@
       (utils/not-blank? q) (ok-response {:tracks (library/search lib q)})
       :else                (ok-response {:tracks (library/search lib)}))))
 
-(defn post-library [])
+(defn- post-library [request]
+  (let [lib    (-> request :library)
+        file   (-> request :params (get "track"))
+        result (library/add lib (:tempfile file))
+        uuid   (-> result :tags :uuid)]
+    (ok-response {:track uuid})))
+
 (defn get-playlist[])
 (defn put-playlist [])
 (defn delete-playlist [])
@@ -105,10 +112,12 @@
        (wrap-assoc-request :config config)
        (wrap-assoc-request :library library)
        middleware.params/wrap-params
+       middleware.multipart-params/wrap-multipart-params
        middleware.json/wrap-json-response
        wrap-cors)
    {:ip    (-> config :bind :addr)
     :port  (-> config :bind :port)
+    :max-body 100000000 ;; 100Mb
     :join? false}))
 
 (defn stop! [s]

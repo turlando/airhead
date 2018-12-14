@@ -36,29 +36,42 @@
 (defn get-track [library uuid]
   (-> library :metadata deref (get (keyword uuid) nil)))
 
+(defn read-codec [path]
+  (-> (utils/sh! "ffprobe"
+                 "-v" "error"
+                 "-select_streams" "a:0"
+                 "-show_entries" "stream=codec_name"
+                 "-of" "default=nokey=1:noprint_wrappers=1"
+                 path)
+      string/trim-newline))
+
 (defn- read-tags [file]
-  (let [audio (AudioFileIO/read file)
+  (let [codec (read-codec (.getPath file))
+        audio (AudioFileIO/readAs file codec)
         tags  (-> (.getTag audio) .get)]
     {:title  (-> (.getValue tags FieldKey/TITLE) .get)
      :artist (-> (.getValue tags FieldKey/ARTIST) .get)
      :album  (-> (.getValue tags FieldKey/ALBUM) .get)}))
 
 (defn- transcode! [in out]
-  (utils/ffmpeg! "-i"     in
-                 "-map"   "0:0"
-                 "-f"     "ogg"
-                 "-c:a:0" "libvorbis"
-                 "-q:a:0" "6"
-                 out))
+  (utils/sh! "ffmpeg"
+             "-i"     in
+             "-map"   "0:0"
+             "-f"     "ogg"
+             "-c:a:0" "libvorbis"
+             "-q:a:0" "6"
+             out))
 
 (defn add [library file]
   (let [uuid  (utils/uuid)
         tags* (read-tags file)
         tags  (assoc tags* :uuid uuid)
-        out   (str (:path library) "/" uuid ".ogg")]
-    (future
-      (transcode! (.getPath file) out)
-      (locking (:lock library)
-        (swap! (:metadata library) assoc (keyword uuid) tags)
-        (spit (:metadata-path library)
-              (json/write-str @(:metadata library)))))))
+        out   (str (:path library) "/" uuid ".ogg")
+        f     (future
+                (transcode! (.getPath file) out)
+                (locking (:lock library)
+                  (swap! (:metadata library) assoc (keyword uuid) tags)
+                  (spit (:metadata-path library)
+                        (json/write-str @(:metadata library)))))]
+    {:tags   tags
+     :future f}))

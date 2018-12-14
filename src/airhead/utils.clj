@@ -47,9 +47,9 @@
   (let [paths (map #(str % file) dirs)]
     (seek #(.exists (io/file %)) paths)))
 
-(defn ffmpeg! [& args]
-  (let [cmd (conj args "ffmpeg")
-        ret (apply shell/sh cmd)
+(defn sh! [cmd & args]
+  (let [cmd* (conj args cmd)
+        ret (apply shell/sh cmd*)
         {:keys [exit out err]} ret]
     (when-not (zero? exit)
       (throw (Exception. err)))
