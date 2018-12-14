@@ -15,6 +15,10 @@
   {:status 200
    :body   body})
 
+(defn bad-request-response [body]
+  {:status 400
+   :body body})
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HANDLERS                                                                   ;;
@@ -35,11 +39,14 @@
   (let [lib (-> request :library)
         id  (-> request :params :id)
         q   (-> request :params (get "q"))]
-    (ok-response
-     (cond
-       (utils/not-nil? id)  (library/get-track lib id)
-       (utils/not-blank? q) {:tracks (library/search lib q)}
-       :else                {:tracks (library/search lib)}))))
+    (cond
+      (utils/not-nil? id)  (if-let [track (library/get-track lib id)]
+                             (ok-response track)
+                             (bad-request-response
+                              {:err "uuid_not_valid"
+                               :msg "No track found with such UUID."}))
+      (utils/not-blank? q) (ok-response {:tracks (library/search lib q)})
+      :else                (ok-response {:tracks (library/search lib)}))))
 
 (defn post-library [])
 (defn get-playlist[])

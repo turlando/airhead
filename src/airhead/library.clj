@@ -24,4 +24,4 @@
     (->> library :metadata vals))))
 
 (defn get-track [library uuid]
-  (-> library :metadata (get (keyword uuid))))
+  (-> library :metadata (get (keyword uuid) nil)))
