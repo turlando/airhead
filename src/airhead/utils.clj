@@ -1,7 +1,9 @@
 (ns airhead.utils
-  (:require [clojure.java.io :as io]))
+  (:require [clojure.string :as string]
+            [clojure.java.io :as io]))
 
 (def not-nil? (complement nil?))
+(def not-blank? (complement string/blank?))
 
 (defn read-int [s]
   (Integer/parseInt (re-find #"^-?\d+$" s)))

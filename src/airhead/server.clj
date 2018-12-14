@@ -3,7 +3,9 @@
             [org.httpkit.server :as server]
             [ring.middleware.params :as middleware.params]
             [ring.middleware.json :as middleware.json]
-            [compojure.core :as compojure]))
+            [compojure.core :as compojure]
+            [airhead.utils :as utils]
+            [airhead.library :as library]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; RESPONSE BOILERPLATE                                                       ;;
@@ -21,14 +23,24 @@
 (defn get-info [request]
   (let [info    (-> request :config :info)
         icecast (-> request :config :icecast)]
-    (ok-response {:name          (:name info)
-                  :greet_message (:greet-message info)
-                  :stream_url    (str (if (:https? icecast)"https://" "http://")
-                                      (:addr icecast)
-                                      ":" (:port icecast)
-                                      "/" (:mount icecast))})))
+    (ok-response
+     {:name          (:name info)
+      :greet_message (:greet-message info)
+      :stream_url    (str (if (:https? icecast)"https://" "http://")
+                          (:addr icecast)
+                          ":" (:port icecast)
+                          "/" (:mount icecast))})))
 
-(defn get-library [])
+(defn get-library [request]
+  (let [lib (-> request :library)
+        id  (-> request :params :id)
+        q   (-> request :params (get "q"))]
+    (ok-response
+     (cond
+       (utils/not-nil? id)  nil
+       (utils/not-blank? q) {:tracks (library/search lib q)}
+       :else                {:tracks (library/search lib)}))))
+
 (defn post-library [])
 (defn get-playlist[])
 (defn put-playlist [])
@@ -79,11 +91,12 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn start!
-  [{:keys [config]
+  [{:keys [config library]
     :as   args}]
   (server/run-server
    (-> routes
        (wrap-assoc-request :config config)
+       (wrap-assoc-request :library library)
        middleware.params/wrap-params
        middleware.json/wrap-json-response
        wrap-cors)

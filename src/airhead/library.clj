@@ -6,17 +6,19 @@
 
 (def ^:private metadata-file-name "metadata.json")
 
-(defn open-library [path]
+(defn open [path]
   {:path     path
    :metadata (-> (str path "/" metadata-file-name)
                  io/reader
                  (json/read :key-fn keyword))
    :lock     (Object.)})
 
-(defn search-library
+(defn search
   ([library]
      (-> library :metadata vals))
-  ([library pattern]
+  ([library query]
    (filter
-    #(re-matches pattern (string/join " " (-> % (dissoc :uuid) vals)))
+    #(string/includes?
+      (string/lower-case (string/join " " (-> % (dissoc :uuid) vals)))
+      (string/lower-case query))
     (->> library :metadata vals))))
