@@ -1,6 +1,7 @@
 (ns airhead.utils
   (:require [clojure.string :as string]
-            [clojure.java.io :as io]))
+            [clojure.java.io :as io]
+            [clojure.java.shell :as shell]))
 
 (def not-nil? (complement nil?))
 (def not-blank? (complement string/blank?))
@@ -39,7 +40,17 @@
       io/resource
       io/reader))
 
+(defn uuid [] (str (java.util.UUID/randomUUID)))
+
 (defn find-file-in-dirs [file dirs]
   "Returns the first path where file is any of dirs or nil otherwise."
   (let [paths (map #(str % file) dirs)]
-    (seek #(.exists (^java.io.File io/file %)) paths)))
+    (seek #(.exists (io/file %)) paths)))
+
+(defn ffmpeg! [& args]
+  (let [cmd (conj args "ffmpeg")
+        ret (apply shell/sh cmd)
+        {:keys [exit out err]} ret]
+    (when-not (zero? exit)
+      (throw (Exception. err)))
+    out))

@@ -12,7 +12,9 @@
                  [http-kit "2.3.0"]
                  [ring/ring-core "1.7.1"]
                  [ring/ring-json "0.4.0"]
-                 [compojure "1.6.1"]]
+                 [javax.servlet/servlet-api "2.5"]
+                 [compojure "1.6.1"]
+                 [com.ealva/ealvatag "0.4.2"]]
 
   :main ^:skip-aot airhead.core
   :global-vars {*warn-on-reflection* true}
