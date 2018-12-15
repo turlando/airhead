@@ -6,7 +6,8 @@
             [ring.middleware.json :as middleware.json]
             [compojure.core :as compojure]
             [airhead.utils :as utils]
-            [airhead.library :as library]))
+            [airhead.library :as library]
+            [airhead.playlist :as playlist]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; RESPONSE BOILERPLATE                                                       ;;
@@ -56,9 +57,40 @@
         uuid   (-> result :tags :uuid)]
     (ok-response {:track uuid})))
 
-(defn- get-playlist [])
-(defn- put-playlist [])
-(defn- delete-playlist [])
+(defn- get-playlist [request]
+  (let [lib    (-> request :library)
+        pl     (-> request :playlist)
+        status (playlist/status pl)]
+    (ok-response {:current (library/get-track lib (first status))
+                  :next    (map #(library/get-track lib %) (rest status))})))
+
+(defn- put-playlist [request]
+  (let [lib    (-> request :library)
+        pl     (-> request :playlist)
+        id     (-> request :params :id)
+        status (playlist/status pl)]
+    (cond
+      (some #{id} status)               (bad-request-response
+                                         {:err "duplicate"
+                                          :msg (str "The track is already "
+                                                    "present in the playlist.")})
+      (nil? (library/get-track lib id)) (bad-request-response
+                                         {:err "track_not_found"
+                                          :msg "No track found with such UUID."})
+      :else                             (do (playlist/push! pl id)
+                                            (ok-response {})))))
+
+(defn- delete-playlist [request]
+  (let [lib    (-> request :library)
+        pl     (-> request :playlist)
+        id     (-> request :params :id)
+        status (playlist/status pl)]
+    (cond
+      (not-any? #{id} status) (bad-request-response
+                               {:err "track_not_found"
+                                :msg "No track found with such UUID."})
+      :else                   (do (playlist/remove! pl id)
+                                  (ok-response {})))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -74,8 +106,8 @@
       (compojure/POST "/" [] post-library))
     (compojure/context "/playlist" []
       (compojure/GET "/" [] get-playlist)
-      (compojure/PUT "/" [] put-playlist)
-      (compojure/DELETE "/" [] delete-playlist))))
+      (compojure/PUT "/:id" [] put-playlist)
+      (compojure/DELETE "/:id" [] delete-playlist))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -105,12 +137,13 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn start!
-  [{:keys [config library]
+  [{:keys [config library playlist]
     :as   args}]
   (server/run-server
    (-> routes
        (wrap-assoc-request :config config)
        (wrap-assoc-request :library library)
+       (wrap-assoc-request :playlist playlist)
        middleware.params/wrap-params
        middleware.multipart-params/wrap-multipart-params
        middleware.json/wrap-json-response
