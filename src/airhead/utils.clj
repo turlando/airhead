@@ -6,18 +6,7 @@
 (def not-nil? (complement nil?))
 (def not-blank? (complement string/blank?))
 
-(defn read-int [s]
-  (Integer/parseInt (re-find #"^-?\d+$" s)))
-
-(defn read-float [s]
-  (Float/parseFloat (re-find #"^-?\d+\.\d+$" s)))
-
-(defn map-vals [f m]
-  (zipmap (keys m)
-          (map f (vals m))))
-
-(defn some-vals [m]
-  (into {} (remove (comp nil? second) m)))
+(def queue clojure.lang.PersistentQueue/EMPTY)
 
 (defn seek
   "Returns first item from coll for which (pred item) returns true.
@@ -30,16 +19,6 @@
                not-found))
            not-found coll)))
 
-(defn slurp-resource [path]
-  (-> path
-      io/resource
-      slurp))
-
-(defn ^java.io.Reader resource-reader [path]
-  (-> path
-      io/resource
-      io/reader))
-
 (defn uuid [] (str (java.util.UUID/randomUUID)))
 
 (defn find-file-in-dirs [file dirs]
@@ -48,8 +27,8 @@
     (seek #(.exists (io/file %)) paths)))
 
 (defn sh! [cmd & args]
-  (let [cmd* (conj args cmd)
-        ret (apply shell/sh cmd*)
+  (let [command                (conj args cmd)
+        ret                    (apply shell/sh command)
         {:keys [exit out err]} ret]
     (when-not (zero? exit)
       (throw (Exception. err)))

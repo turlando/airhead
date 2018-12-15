@@ -16,9 +16,9 @@
   {:status 200
    :body   body})
 
-(defn bad-request-response [body]
+(defn- bad-request-response [body]
   {:status 400
-   :body body})
+   :body   body})
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -56,9 +56,9 @@
         uuid   (-> result :tags :uuid)]
     (ok-response {:track uuid})))
 
-(defn get-playlist[])
-(defn put-playlist [])
-(defn delete-playlist [])
+(defn- get-playlist [])
+(defn- put-playlist [])
+(defn- delete-playlist [])
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -115,10 +115,10 @@
        middleware.multipart-params/wrap-multipart-params
        middleware.json/wrap-json-response
        wrap-cors)
-   {:ip    (-> config :bind :addr)
-    :port  (-> config :bind :port)
+   {:ip       (-> config :bind :addr)
+    :port     (-> config :bind :port)
     :max-body 100000000 ;; 100Mb
-    :join? false}))
+    :join?    false}))
 
 (defn stop! [s]
   (s :timeout 0))
