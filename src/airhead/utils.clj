@@ -21,8 +21,9 @@
 
 (defn uuid [] (str (java.util.UUID/randomUUID)))
 
-(defn find-file-in-dirs [file dirs]
+(defn find-file-in-dirs
   "Returns the first path where file is any of dirs or nil otherwise."
+  [file dirs]
   (let [paths (map #(str % file) dirs)]
     (seek #(.exists (io/file %)) paths)))
 
