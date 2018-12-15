@@ -23,6 +23,18 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; WEBSOCKET HELPERS                                                          ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn notify-websocket-clients [clients data]
+  (doseq [channel @clients]
+    (server/send! channel (json/write-str data) false)))
+
+(defn update-response [x]
+  {:update x})
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HANDLERS                                                                   ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -51,10 +63,15 @@
       :else                (ok-response {:tracks (library/search lib)}))))
 
 (defn- post-library [request]
-  (let [lib    (-> request :library)
-        file   (-> request :params (get "track"))
-        result (library/add lib (:tempfile file))
-        uuid   (-> result :tags :uuid)]
+  (let [lib        (-> request :library)
+        ws-clients (-> request :ws-clients)
+        file       (-> request :params (get "track"))
+        result     (library/add lib (:tempfile file))
+        uuid       (-> result :tags :uuid)]
+    (future @(:future result)
+            (notify-websocket-clients
+             ws-clients
+             (update-response "library")))
     (ok-response {:track uuid})))
 
 (defn- get-playlist [request]
@@ -65,10 +82,11 @@
                   :next    (map #(library/get-track lib %) (rest status))})))
 
 (defn- put-playlist [request]
-  (let [lib    (-> request :library)
-        pl     (-> request :playlist)
-        id     (-> request :params :id)
-        status (playlist/status pl)]
+  (let [lib        (-> request :library)
+        pl         (-> request :playlist)
+        ws-clients (-> request :ws-clients)
+        id         (-> request :params :id)
+        status     (playlist/status pl)]
     (cond
       (some #{id} status)               (bad-request-response
                                          {:err "duplicate"
@@ -78,6 +96,9 @@
                                          {:err "track_not_found"
                                           :msg "No track found with such UUID."})
       :else                             (do (playlist/push! pl id)
+                                            (future (notify-websocket-clients
+                                                     ws-clients
+                                                     (update-response "playlist")))
                                             (ok-response {})))))
 
 (defn- delete-playlist [request]
@@ -91,6 +112,14 @@
                                 :msg "No track found with such UUID."})
       :else                   (do (playlist/remove! pl id)
                                   (ok-response {})))))
+
+(defn- get-ws [request]
+  (let [clients (-> request :ws-clients)]
+    (server/with-channel request channel
+      (swap! clients conj channel)
+      (server/on-close channel
+                       (fn [status]
+                         (swap! clients #(remove channel %)))))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -107,7 +136,8 @@
     (compojure/context "/playlist" []
       (compojure/GET "/" [] get-playlist)
       (compojure/PUT "/:id" [] put-playlist)
-      (compojure/DELETE "/:id" [] delete-playlist))))
+      (compojure/DELETE "/:id" [] delete-playlist))
+    (compojure/GET "/ws" [] get-ws)))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -144,6 +174,7 @@
        (wrap-assoc-request :config config)
        (wrap-assoc-request :library library)
        (wrap-assoc-request :playlist playlist)
+       (wrap-assoc-request :ws-clients (atom []))
        middleware.params/wrap-params
        middleware.multipart-params/wrap-multipart-params
        middleware.json/wrap-json-response
