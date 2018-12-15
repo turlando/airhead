@@ -104,6 +104,7 @@
 (defn- delete-playlist [request]
   (let [lib    (-> request :library)
         pl     (-> request :playlist)
+        ws-clients (-> request :ws-clients)
         id     (-> request :params :id)
         status (playlist/status pl)]
     (cond
@@ -111,6 +112,9 @@
                                {:err "track_not_found"
                                 :msg "No track found with such UUID."})
       :else                   (do (playlist/remove! pl id)
+                                  (future (notify-websocket-clients
+                                           ws-clients
+                                           (update-response "playlist")))
                                   (ok-response {})))))
 
 (defn- get-ws [request]

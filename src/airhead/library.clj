@@ -36,7 +36,7 @@
 (defn get-track [library uuid]
   (-> library :metadata deref (get (keyword uuid) nil)))
 
-(defn read-codec [path]
+(defn- read-codec [path]
   (-> (utils/sh! "ffprobe"
                  "-v" "error"
                  "-select_streams" "a:0"
