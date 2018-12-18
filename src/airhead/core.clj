@@ -1,10 +1,13 @@
 (ns airhead.core
   (:gen-class)
-  (:require [clojure.edn :as edn]
+  (:require [clojure.tools.logging :as log]
+            [clojure.edn :as edn]
             [airhead.utils :as utils]
             [airhead.library :as library]
             [airhead.playlist :as playlist]
-            [airhead.server :as server]))
+            [airhead.libshout :as libshout]
+            [airhead.server :as server]
+            [airhead.stream :as stream]))
 
 (def ^:private config-file "airhead.edn")
 (def ^:private config-dirs ["./"
@@ -12,22 +15,40 @@
                             "/usr/local/etc/airhead/"])
 
 (defn stop!
-  [{:keys [config http-server]
-    :as   args}]
+  [{:keys [http-server ice-conn stream]}]
+  (log/info "Stopping Airhead")
   (server/stop! http-server)
+  (stream/stop! stream)
+  (try
+    (libshout/close! ice-conn)
+    (catch Exception e
+      (log/error "Error while closing Icecast connection: "
+                 (:cause (Throwable->map e))))
+    (finally
+      (libshout/deinit-lib!)))
   nil)
 
 (defn start! []
   (let [config-path (utils/find-file-in-dirs config-file config-dirs)
         config      (edn/read-string (slurp config-path))
         lib-path    (-> config :library :path)
-        lib         (library/open lib-path)
-        playlist    (playlist/make-playlist)]
+        library     (library/open lib-path)
+        playlist    (playlist/mk-playlist)
+        http-server (server/start! {:config   config
+                                    :library  library
+                                    :playlist playlist})
+        ice-conn    (do (libshout/init-lib!)
+                        (libshout/open (:icecast config)))
+        stream      (stream/mk-stream {:ice-conn ice-conn
+                                       :library  library
+                                       :playlist playlist})]
+    (log/info "Starting Airhead.")
+    (log/info "Reading configuration from " config-path)
     (when-not config-path
       (throw (Exception. "Could not find configuration file.")))
     {:config      config
-     :library     lib
+     :library     library
      :playlist    playlist
-     :http-server (server/start! {:config   config
-                                  :library  lib
-                                  :playlist playlist})}))
+     :http-server http-server
+     :ice-conn    ice-conn
+     :stream      stream}))

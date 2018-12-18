@@ -1,7 +1,7 @@
 (ns airhead.playlist
   (:require [airhead.utils :as utils]))
 
-(defn make-playlist []
+(defn mk-playlist []
   (atom (utils/queue)))
 
 (defn status [playlist]
