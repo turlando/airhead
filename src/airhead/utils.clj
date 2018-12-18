@@ -28,9 +28,11 @@
     (seek #(.exists (io/file %)) paths)))
 
 (defn sh! [cmd & args]
-  (let [command                (conj args cmd)
-        ret                    (apply shell/sh command)
-        {:keys [^Integer exit ^String out ^String err]} ret]
+  (let [command               (conj args cmd)
+        ret                   (apply shell/sh command)
+        {:keys [^Integer exit
+                ^String out
+                ^String err]} ret]
     (when-not (zero? exit)
       (throw (Exception. err)))
     out))

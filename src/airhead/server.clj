@@ -101,11 +101,11 @@
                                             (ok-response {})))))
 
 (defn- delete-playlist [request]
-  (let [lib    (-> request :library)
-        pl     (-> request :playlist)
+  (let [lib        (-> request :library)
+        pl         (-> request :playlist)
         ws-clients (-> request :ws-clients)
-        id     (-> request :params :id)
-        status (playlist/status pl)]
+        id         (-> request :params :id)
+        status     (playlist/status pl)]
     (cond
       (not-any? #{id} status) (bad-request-response
                                {:err "track_not_found"
