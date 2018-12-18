@@ -44,8 +44,7 @@
     (ok-response
      {:name          (:name info)
       :greet_message (:greet-message info)
-      :stream_url    (str (if (:https? icecast)"https://" "http://")
-                          (:addr icecast)
+      :stream_url    (str "http://" (:addr icecast)
                           ":" (:port icecast)
                           "/" (:mount icecast))})))
 
