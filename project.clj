@@ -14,7 +14,8 @@
                  [ring/ring-json "0.4.0"]
                  [javax.servlet/servlet-api "2.5"]
                  [compojure "1.6.1"]
-                 [com.ealva/ealvatag "0.4.2"]]
+                 [com.ealva/ealvatag "0.4.2"]
+                 [clj-native "0.9.5"]]
 
   :main ^:skip-aot airhead.core
   :global-vars {*warn-on-reflection* true}
