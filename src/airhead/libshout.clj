@@ -3,6 +3,8 @@
   (:import (java.io InputStream)
            (java.nio IntBuffer ByteBuffer)))
 
+(def loaded? (atom false))
+
 (jna/defclib libshout
   (:libname "libshout")
   (:functions
@@ -22,13 +24,15 @@
 
 (defn- check-err [f & args]
   (let [r (apply f args)]
-    (when-not (= 0 r)
+    (when (< r 0)
       (throw (Exception. (str "Libshout error: " r))))))
 
 (defn init-lib!
   "Call this once before ever using the lib."
   []
-  (jna/loadlib libshout)
+  (when (not @loaded?)
+    (reset! loaded? true)
+    (jna/loadlib libshout))
   (shout_init))
 
 (defn deinit-lib!
@@ -57,6 +61,7 @@
       (check-err shout_set_user handle username)
       (check-err shout_set_password handle password)
       (check-err shout_set_mount handle mount)
+      (check-err shout_open handle)
       handle)
     (Exception. "Could not allocate a new shout_t data structure.")))
 
@@ -71,10 +76,10 @@
     (check-err shout_send handle (ByteBuffer/wrap bytes) len)
     (shout_sync handle)))
 
-(defn send-input-stream! [handle ^InputStream in-stream continue?]
+(defn send-input-stream! [handle ^InputStream in-stream stop?]
   (let [buffer (byte-array 4096)
         read!  #(.read in-stream buffer)]
     (loop [len (read!)]
-      (when (and (pos? len) @continue?)
+      (when (and (pos? len) (not @stop?))
         (send-bytes! handle buffer len)
         (recur (read!))))))
