@@ -36,6 +36,9 @@
 (defn get-track [library uuid]
   (-> library :metadata deref (get (keyword uuid) nil)))
 
+(defn get-track-path [library uuid]
+  (str (:path library) "/" uuid ".ogg"))
+
 (defn- read-codec [path]
   (-> (utils/sh! "ffprobe"
                  "-v" "error"
