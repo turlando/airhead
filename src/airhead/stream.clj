@@ -1,25 +1,31 @@
 (ns airhead.stream
   (:require [clojure.java.io :as io]
             [clojure.tools.logging :as log]
-            [airhead.playlist :as p]
-            [airhead.library :as l]
+            [airhead.playlist :as playlist]
+            [airhead.library :as library]
             [airhead.libshout :as libshout]))
+
+
+(def ^:private idle-track (io/resource "idle-track.ogg"))
 
 (defn- stream! [ice-conn library playlist stop? skip?]
   (log/info "Starting streaming.")
   (while (not @stop?)
-    (if-let [current-track (-> (p/status playlist) first)]
+    (if-let [current-track (-> (playlist/status playlist) first)]
       (do
         (log/info "Picking " current-track)
-        (let [track-path (l/get-track-path library current-track)]
+        (let [track-path (library/get-track-path library current-track)]
           (with-open [track-stream (-> track-path io/input-stream)]
             (log/info "Starting track streaming.")
             (libshout/send-input-stream! ice-conn track-stream skip?)
-            (p/pop! playlist)
-            (log/info "Track streaming completed."))))
-      (do (log/info "No tracks in playlist. Sleeping.")
-          (Thread/sleep 1000))))
-  (log/info "Streaming completed."))
+            (log/info "Track streaming completed. Skipped:" @skip?)
+            (dosync (ref-set skip? false))
+            (playlist/pop! playlist))))
+      (do (log/info "No tracks in playlist. Sending idle track.")
+          (with-open [idle-stream (io/input-stream idle-track)]
+            (libshout/send-input-stream! ice-conn idle-stream skip?)))))
+  (log/info "Streaming completed.")
+  nil)
 
 (defn mk-stream [{:keys [ice-conn library playlist]}]
   (let [stop? (ref false :validator boolean?)
@@ -35,7 +41,7 @@
    (ref-set stop-ref true))
   nil)
 
-(defn skip! [s]
+(defn skip! [{:keys [skip-ref]}]
   (log/info "Skipping track.")
   (dosync
-   (ref-set (:skip-ref s) true)))
+   (ref-set skip-ref true)))
