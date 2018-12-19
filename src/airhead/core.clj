@@ -15,9 +15,10 @@
                             "/usr/local/etc/airhead/"])
 
 (defn stop!
-  [{:keys [http-server ice-conn stream]}]
+  [{:keys [ice-conn stream]
+    :as   args}]
   (log/info "Stopping Airhead")
-  (server/stop! http-server)
+  (server/stop! args)
   (stream/stop! stream)
   (try
     (libshout/close! ice-conn)
@@ -29,26 +30,26 @@
   nil)
 
 (defn start! []
-  (let [config-path (utils/find-file-in-dirs config-file config-dirs)
-        config      (edn/read-string (slurp config-path))
-        lib-path    (-> config :library :path)
-        library     (library/open lib-path)
-        playlist    (playlist/mk-playlist)
-        http-server (server/start! {:config   config
-                                    :library  library
-                                    :playlist playlist})
-        ice-conn    (do (libshout/init-lib!)
-                        (libshout/open (:icecast config)))
-        stream      (stream/mk-stream {:ice-conn ice-conn
-                                       :library  library
-                                       :playlist playlist})]
-    (log/info "Starting Airhead.")
-    (log/info "Reading configuration from " config-path)
-    (when-not config-path
-      (throw (Exception. "Could not find configuration file.")))
-    {:config      config
-     :library     library
-     :playlist    playlist
-     :http-server http-server
-     :ice-conn    ice-conn
-     :stream      stream}))
+  (log/info "Starting Airhead.")
+  (if-let [config-path (utils/find-file-in-dirs config-file config-dirs)]
+    (do (log/info "Reading configuration from " config-path)
+        (let [config      (edn/read-string (slurp config-path))
+              lib-path    (-> config :library :path)
+              library     (library/open lib-path)
+              playlist    (playlist/mk-playlist)
+              ice-conn    (do (libshout/init-lib!)
+                              (libshout/open (:icecast config)))
+              stream      (stream/mk-stream {:ice-conn ice-conn
+                                             :library  library
+                                             :playlist playlist})
+              http-server (server/start! {:config   config
+                                          :library  library
+                                          :playlist playlist
+                                          :stream   stream})]
+          {:config      config
+           :library     library
+           :playlist    playlist
+           :http-server http-server
+           :ice-conn    ice-conn
+           :stream      stream}))
+    (throw (Exception. "Could not find configuration file."))))
