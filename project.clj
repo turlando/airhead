@@ -10,6 +10,7 @@
   :dependencies [[org.clojure/clojure "1.9.0"]
                  [org.clojure/tools.logging "0.4.1"]
                  [org.clojure/data.json "0.2.6"]
+                 [log4j/log4j "1.2.17"]
                  [http-kit "2.3.0"]
                  [ring/ring-core "1.7.1"]
                  [ring/ring-json "0.4.0"]
