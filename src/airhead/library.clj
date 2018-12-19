@@ -23,6 +23,9 @@
                               (json/read :key-fn keyword)))
      :lock          (Object.)}))
 
+(defn get-atom [library]
+  (:metadata library))
+
 (defn search
   ([library]
    (-> library :metadata deref vals))

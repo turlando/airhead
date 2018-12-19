@@ -7,7 +7,8 @@
             [compojure.core :as compojure]
             [airhead.utils :as utils]
             [airhead.library :as library]
-            [airhead.playlist :as playlist]))
+            [airhead.playlist :as playlist]
+            [airhead.stream :as stream]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; RESPONSE BOILERPLATE                                                       ;;
@@ -67,10 +68,6 @@
         file       (-> request :params (get "track"))
         result     (library/add lib (:tempfile file))
         uuid       (-> result :tags :uuid)]
-    (future @(:future result)
-            (notify-websocket-clients
-             ws-clients
-             (update-response "library")))
     (ok-response {:track uuid})))
 
 (defn- get-playlist [request]
@@ -95,26 +92,24 @@
                                          {:err "track_not_found"
                                           :msg "No track found with such UUID."})
       :else                             (do (playlist/push! pl id)
-                                            (future (notify-websocket-clients
-                                                     ws-clients
-                                                     (update-response "playlist")))
                                             (ok-response {})))))
 
 (defn- delete-playlist [request]
   (let [lib        (-> request :library)
         pl         (-> request :playlist)
         ws-clients (-> request :ws-clients)
+        stream     (-> request :stream)
         id         (-> request :params :id)
         status     (playlist/status pl)]
     (cond
-      (not-any? #{id} status) (bad-request-response
-                               {:err "track_not_found"
-                                :msg "No track found with such UUID."})
-      :else                   (do (playlist/remove! pl id)
-                                  (future (notify-websocket-clients
-                                           ws-clients
-                                           (update-response "playlist")))
-                                  (ok-response {})))))
+      (not-any? #{id} status)             (bad-request-response
+                                           {:err "track_not_found"
+                                            :msg "No track found with such UUID."})
+      ;; TODO: this is not thread safe.
+      (= id (first (playlist/status pl))) (do (stream/skip! stream)
+                                              (ok-response {}))
+      :else                               (do (playlist/remove! pl id)
+                                              (ok-response {})))))
 
 (defn- get-ws [request]
   (let [clients (-> request :ws-clients)]
@@ -170,22 +165,34 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn start!
-  [{:keys [config library playlist]
+  [{:keys [config library playlist stream]
     :as   args}]
-  (server/run-server
-   (-> routes
-       (wrap-assoc-request :config config)
-       (wrap-assoc-request :library library)
-       (wrap-assoc-request :playlist playlist)
-       (wrap-assoc-request :ws-clients (atom []))
-       middleware.params/wrap-params
-       middleware.multipart-params/wrap-multipart-params
-       middleware.json/wrap-json-response
-       wrap-cors)
-   {:ip       (-> config :bind :addr)
-    :port     (-> config :bind :port)
-    :max-body 100000000 ;; 100Mb
-    :join?    false}))
+  (let [ws-clients (atom [])]
+    (add-watch (library/get-atom library) :notify-ws-library
+               (fn [key ref old-value new-value]
+                 (notify-websocket-clients ws-clients
+                                           (update-response "library"))))
+    (add-watch playlist :notify-ws-playlist
+               (fn [key ref old-value new-value]
+                 (notify-websocket-clients ws-clients
+                                           (update-response "playlist"))))
+    (server/run-server
+     (-> routes
+         (wrap-assoc-request :config config)
+         (wrap-assoc-request :library library)
+         (wrap-assoc-request :playlist playlist)
+         (wrap-assoc-request :stream stream)
+         (wrap-assoc-request :ws-clients ws-clients)
+         middleware.params/wrap-params
+         middleware.multipart-params/wrap-multipart-params
+         middleware.json/wrap-json-response
+         wrap-cors)
+     {:ip       (-> config :bind :addr)
+      :port     (-> config :bind :port)
+      :max-body 100000000 ;; 100Mb
+      :join?    false})))
 
-(defn stop! [s]
-  (s :timeout 0))
+(defn stop! [{:keys [library playlist http-server]}]
+  (remove-watch (library/get-atom library) :notify-ws-library)
+  (remove-watch playlist :notify-ws-playlist)
+  (http-server :timeout 0))
