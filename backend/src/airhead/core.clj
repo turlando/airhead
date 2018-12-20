@@ -10,9 +10,9 @@
             [airhead.stream :as stream]))
 
 (def ^:private config-file "airhead.edn")
-(def ^:private config-dirs ["./"
+(def ^:private config-dirs ["/usr/local/etc/airhead/"
                             "/etc/airhead/"
-                            "/usr/local/etc/airhead/"])
+                            "./"])
 
 (defn stop!
   [{:keys [ice-conn stream]
