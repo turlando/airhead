@@ -5,6 +5,7 @@
             [ring.middleware.multipart-params :as middleware.multipart-params]
             [ring.middleware.json :as middleware.json]
             [compojure.core :as compojure]
+            [compojure.route :as compojure.route]
             [airhead.utils :as utils]
             [airhead.library :as library]
             [airhead.playlist :as playlist]
@@ -177,7 +178,10 @@
                  (notify-websocket-clients ws-clients
                                            (update-response "playlist"))))
     (server/run-server
-     (-> routes
+     (-> (compojure/routes
+          routes
+          (when-let [static-path (-> config :http :static-path)]
+            (compojure.route/files "/" {:root static-path})))
          (wrap-assoc-request :config config)
          (wrap-assoc-request :library library)
          (wrap-assoc-request :playlist playlist)
