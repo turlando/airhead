@@ -118,7 +118,7 @@
       (swap! clients conj channel)
       (server/on-close channel
                        (fn [status]
-                         (swap! clients #(remove channel %)))))))
+                         (swap! clients #(remove #{channel} %)))))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
