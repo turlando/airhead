@@ -47,3 +47,10 @@ airhead.core=> (stop! s)
 ### Development with Emacs
 
 Install CIDER and then do `M-x cider-jack-in`.
+
+## Running
+
+Compile the uberjar with `lein uberjar`.
+It will generate `target/uberjar/airhead-0.1.0-SNAPSHOT-standalone.jar`.
+
+Then just run the program with `java -jar path/to/uber.jar`.

@@ -1,6 +1,7 @@
 (ns airhead.core
   (:gen-class)
-  (:require [clojure.tools.logging :as log]
+  (:require [clojure.repl]
+            [clojure.tools.logging :as log]
             [clojure.edn :as edn]
             [airhead.utils :as utils]
             [airhead.library :as library]
@@ -53,3 +54,11 @@
            :ice-conn    ice-conn
            :stream      stream}))
     (throw (Exception. "Could not find configuration file."))))
+
+(defn -main []
+  (let [s (start!)]
+    (clojure.repl/set-break-handler!
+     (fn [_]
+       (stop! s)
+       (shutdown-agents)
+       (System/exit 0)))))
