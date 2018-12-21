@@ -1,4 +1,4 @@
-# AirHead Backend
+# Airhead Backend
 
 ## Dependencies
 

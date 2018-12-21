@@ -1,4 +1,4 @@
-# AirHead API
+# Airhead API
 
 ## Retrieve basic information
 
