@@ -1,71 +1,77 @@
 (defproject airhead-frontend "0.1.0-SNAPSHOT"
-  :description "Airhead clojurescript frontend"
-  :url "https://github.com/edne/airhead-frontend"
-  :license {:name "2-Clause BSD License"
-            :url "https://opensource.org/licenses/BSD-2-Clause"}
+  :description ""
+  :url "https://github.com/turlando/airhead"
 
-  :dependencies [[org.clojure/clojure "1.8.0" :scope "provided"]
-                 [org.clojure/clojurescript "1.9.562" :scope "provided"]
-                 [reagent "0.6.2"]
-                 [cljs-http "0.1.43"]
-                 [jarohen/chord "0.8.1"]
-                 [markdown-clj "0.9.99"]]
+  :license {:name "Eclipse Public License"
+            :url  "http://www.eclipse.org/legal/epl-v10.html"}
 
-  :plugins [[lein-cljsbuild "1.1.5"]
-            [cljs-simple-cache-buster "0.1.1"]
-            [lein-doo "0.1.6"]
-            [lein-figwheel "0.5.10"]]
+  :min-lein-version "2.8.0"
+  :plugins [[lein-cljsbuild "1.1.7"]
+            [lein-less "1.7.5"]]
 
-  :min-lein-version "2.5.0"
+  :dependencies [[org.clojure/clojure "1.9.0"]
+                 [org.clojure/clojurescript "1.10.439"]
+                 [reagent "0.8.1"]]
 
-  :clean-targets ^{:protect false}
-  [:target-path
-   [:cljsbuild :builds :app :compiler :output-dir]
-   [:cljsbuild :builds :app :compiler :output-to]]
 
-  :resource-paths ["public"]
+  :clean-targets ^{:protect false} ["resources/public/js"
+                                    "target"
+                                    ".nrepl-port"
+                                    "figwheel_server.log"]
 
-  :figwheel {:http-server-root "."
-             :nrepl-port 7002
-             :nrepl-middleware ["cemerick.piggieback/wrap-cljs-repl"]
-             :css-dirs ["public/css"]}
+  :cljsbuild
+  {:builds
+   [{:id           "dev"
+     :source-paths ["src/cljs"]
+     :compiler     {:main                 airhead-frontend.core
+                    :closure-defines      {goog.DEBUG true}
+                    :optimizations        :none
+                    :output-to            "resources/public/js/app.js"
+                    :output-dir           "resources/public/js/out"
+                    :asset-path           "js/out"
+                    :source-map-timestamp true
+                    :preloads             [devtools.preload]
+                    :external-config      {:devtools/config
+                                           {:features-to-install    [:formatters :hints]
+                                            :fn-symbol              "F"
+                                            :print-config-overrides true}}}
+     ;; figwheel client config
+     :figwheel     {:websocket-url "ws://[[server-hostname]]:[[server-port]]/figwheel-ws"
+                    :on-jsload     "airhead-frontend.core/reload"}}
 
-  :cljs-simple-cache-buster {:cljsbuild-id ["app" "test" "release"]
-                             :template-file "template/index.html"
-                             :output-to "public/index.html"}
+    {:id           "min"
+     :source-paths ["src/cljs"]
+     :compiler     {:main            airhead-frontend.core
+                    :closure-defines {goog.DEBUG false}
+                    :optimizations   :advanced
+                    :output-to       "resources/public/js/app.js"
+                    :output-dir      "resources/public/js/min"
+                    :elide-asserts   true
+                    :pretty-print    false}}]}
 
-  :cljsbuild {:builds {:app
-                       {:source-paths ["src" "env/dev/cljs"]
-                        :compiler
-                        {:main "airhead-frontend.dev"
-                         :output-to "public/js/app.js"
-                         :output-dir "public/js/out"
-                         :asset-path   "js/out"
-                         :source-map true
-                         :optimizations :none
-                         :pretty-print  true}
-                        :figwheel
-                        {:open-urls ["http://localhost:3449/index.html"]}}
+  :less {:source-paths ["src/less"]
+         :target-path  "resources/public/css"}
 
-                       :test
-                       {:source-paths ["src" "test" "env/dev/cljs"]
-                        :compiler {:main airhead-frontend.test-runner
-                                   :output-to  "public/js/test.js"
-                         :source-map true
-                         :optimizations :none
-                         :pretty-print  true}}
+  :profiles
+  {:dev
+   {:plugins      [[lein-figwheel "0.5.17"]]
+    :dependencies [[figwheel-sidecar "0.5.17"]
+                   [cider/piggieback "0.3.10"]
+                   [binaryage/devtools "0.9.9"]]
+    :source-paths ["src/clj"]
+    :repl-options {:nrepl-middleware [cider.piggieback/wrap-cljs-repl]}
+    ;; figwheel server config
+    :figwheel     {:server-port 8081
+                   :css-dirs    ["resources/public/css"]}}}
 
-                       :release
-                       {:source-paths ["src" "env/prod/cljs"]
-                        :compiler
-                        {:output-to "public/js/app.js"
-                         :output-dir "public/js/release"
-                         :asset-path   "js/out"
-                         :optimizations :advanced
-                         :pretty-print false}}}}
+  :aliases
+  {"dev"   ["with-profile" "+dev" "do"
+            ["clean"]
+            ["cljsbuild" "once" "dev"]
+            ["less" "once"]
+            ["figwheel" "dev"]]
+   "build" ["with-profile" "-dev" "do"
+            ["clean"]
+            ["less" "once"]
+            ["cljsbuild" "once" "min"]]})
 
-  :aliases {"release" ["do" "clean" ["cljsbuild" "once" "release"]]}
-
-  :profiles {:dev {:dependencies [[figwheel-sidecar "0.5.10"]
-                                  [org.clojure/tools.nrepl "0.2.13"]
-                                  [com.cemerick/piggieback "0.2.2-SNAPSHOT"]]}})
