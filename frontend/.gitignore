@@ -1,8 +1,8 @@
-.nrepl-port
-.lein-nrepl-history
-.rebel_readline_history
+/.nrepl-port
+/.lein-repl-history
+/.lein-nrepl-history
+/.rebel_readline_history
 /*.log
 /target
-/*-init.clj
-/public
-out
+/resources/public/css
+/resources/public/js
