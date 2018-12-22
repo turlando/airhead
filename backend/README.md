@@ -46,9 +46,10 @@ airhead.core=> (stop! s)
 
 ### Development with Emacs
 
-Install CIDER and then do `M-x cider-jack-in`.
+Navigate to a clojure file and start a figwheel REPL with
+`cider-jack-in` or (`C-c M-j`).
 
-## Running
+## Build
 
 Compile the uberjar with `lein uberjar`.
 It will generate `target/uberjar/airhead-0.1.0-SNAPSHOT-standalone.jar`.
