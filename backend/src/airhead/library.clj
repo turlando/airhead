@@ -39,6 +39,9 @@
 (defn get-track [library uuid]
   (-> library :metadata deref (get (keyword uuid) nil)))
 
+(defn get-random-track [library]
+  (-> library :metadata deref keys rand-nth name))
+
 (defn get-track-path [library uuid]
   (str (:path library) "/" uuid ".ogg"))
 

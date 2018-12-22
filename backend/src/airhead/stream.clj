@@ -8,7 +8,7 @@
 
 (def ^:private idle-track (io/resource "idle-track.ogg"))
 
-(defn- stream! [ice-conn library playlist stop? skip?]
+(defn- stream! [ice-conn library playlist random? stop? skip?]
   (log/info "Starting streaming.")
   (while (not @stop?)
     (if-let [current-track (-> (playlist/status playlist) first)]
@@ -21,18 +21,23 @@
             (log/info "Track streaming completed. Skipped:" @skip?)
             (dosync (ref-set skip? false))
             (playlist/pop! playlist))))
-      (do (log/info "No tracks in playlist. Sending idle track.")
-          (with-open [idle-stream (io/input-stream idle-track)]
-            (libshout/send-input-stream! ice-conn idle-stream skip?)))))
-  (log/info "Streaming completed.")
+      (do (if (and random? (not (empty? (library/search library))))
+            (do
+              (log/info "Picking random track.")
+              (playlist/push! playlist (library/get-random-track library)))
+            (do
+              (log/info "No tracks in playlist. Sending idle track.")
+              (with-open [idle-stream (io/input-stream idle-track)]
+                (libshout/send-input-stream! ice-conn idle-stream skip?)))))))
+  (log/info "Streaming stopped.")
   nil)
 
-(defn mk-stream [{:keys [ice-conn library playlist]}]
+(defn mk-stream [{:keys [ice-conn library playlist random?]}]
   (let [stop? (ref false :validator boolean?)
         skip? (ref false :validator boolean?)]
     {:stop-ref stop?
      :skip-ref skip?
-     :future   (future (stream! ice-conn library playlist stop? skip?))}))
+     :future   (future (stream! ice-conn library playlist random? stop? skip?))}))
 
 (defn stop! [{:keys [skip-ref stop-ref]}]
   (log/info "Stopping streaming.")

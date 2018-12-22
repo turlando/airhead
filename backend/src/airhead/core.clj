@@ -40,13 +40,16 @@
               playlist    (playlist/mk-playlist)
               ice-conn    (do (libshout/init-lib!)
                               (libshout/open (:icecast config)))
-              stream      (stream/mk-stream {:ice-conn ice-conn
-                                             :library  library
-                                             :playlist playlist})
-              http-server (server/start! {:config   config
-                                          :library  library
-                                          :playlist playlist
-                                          :stream   stream})]
+              stream      (stream/mk-stream
+                           {:ice-conn ice-conn
+                            :library  library
+                            :playlist playlist
+                            :random?  (-> config :library :auto-dj?)})
+              http-server (server/start!
+                           {:config   config
+                            :library  library
+                            :playlist playlist
+                            :stream   stream})]
           {:config      config
            :library     library
            :playlist    playlist
