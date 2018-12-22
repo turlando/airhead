@@ -39,12 +39,12 @@
         (update-state! :now-playing (body :current)))))
 
 (defn playlist-add! [id]
-  (http/put (api-url (str "playlist/" id)
-                     {:with-credentials? false})))
+  (http/put (api-url (str "playlist/" id))
+            {:with-credentials? false}))
 
 (defn playlist-remove! [id]
-  (http/delete (api-url (str "playlist/" id)
-                        {:with-credentials? false})))
+  (http/delete (api-url (str "playlist/" id))
+               {:with-credentials? false}))
 
 (defn get-library! []
   (go (let [response (<! (http/get (api-url "library")
@@ -53,8 +53,8 @@
         (update-state! :library (get-in response [:body :tracks])))))
 
 (defn playlist-skip! [id]
-  (http/delete (api-url (str "playlist/" (-> @app-state :now-playing :uuid))
-                        {:with-credentials? false})))
+  (http/delete (api-url (str "playlist/" (-> @app-state :now-playing :uuid)))
+               {:with-credentials? false}))
 
 (defn upload! [form]
   (let [progress-chan (chan 1
