@@ -11,13 +11,19 @@
 
   :dependencies [[org.clojure/clojure "1.9.0"]
                  [org.clojure/clojurescript "1.10.439"]
-                 [reagent "0.8.1"]]
+                 [reagent "0.8.1"]
+                 [cljs-http "0.1.43"]
+                 [jarohen/chord "0.8.1"]
+                 [markdown-clj "0.9.99"]]
 
 
   :clean-targets ^{:protect false} ["resources/public/js"
+                                    "resources/public/css"
                                     "target"
                                     ".nrepl-port"
-                                    "figwheel_server.log"]
+                                    "figwheel_server.log"
+                                    ".lein-repl-history"
+                                    ".rebel_readline_history"]
 
   :cljsbuild
   {:builds
@@ -37,7 +43,7 @@
                                             :print-config-overrides true}}}
      ;; figwheel client config
      :figwheel     {:websocket-url "ws://[[server-hostname]]:[[server-port]]/figwheel-ws"
-                    :on-jsload     "airhead-frontend.core/reload"}}
+                    :on-jsload     "airhead-frontend.core/mount-root"}}
 
     {:id           "min"
      :source-paths ["src/cljs"]

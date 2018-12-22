@@ -1,39 +1,18 @@
 (ns airhead-frontend.core
-  (:require
-   [reagent.core :as reagent]
-   ))
+  (:require [reagent.core :as r]
+            [airhead-frontend.components :refer [page-component]]
+            [airhead-frontend.state :as state]))
 
+(def dev? ^boolean js/goog.DEBUG)
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Vars
+(defn maybe-dev-setup! []
+  (when dev?
+    (enable-console-print!)))
 
-(defonce app-state
-  (reagent/atom {}))
-
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Page
-
-(defn page [ratom]
-  [:div
-   "Welcome to reagent-figwheel."])
-
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Initialize App
-
-(defn dev-setup []
-  (when ^boolean js/goog.DEBUG
-    (enable-console-print!)
-    (println "dev mode")
-    ))
-
-(defn reload []
-  (reagent/render [page app-state]
-                  (.getElementById js/document "app")))
+(defn mount-root []
+  (r/render [page-component]
+            (.getElementById js/document "app")))
 
 (defn ^:export main []
-  (dev-setup)
-  (reload))
+  (maybe-dev-setup!)
+  (mount-root))
