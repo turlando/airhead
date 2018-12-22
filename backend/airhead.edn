@@ -1,7 +1,7 @@
 {:bind {:addr "127.0.0.1"
         :port 8080}
 
- :http {:static-path "../frontend/public" ;; string or nil
+ :http {:static-path "../frontend/resources/public" ;; string or nil
         }
 
  :library {:path     "library"
