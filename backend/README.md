@@ -46,7 +46,7 @@ airhead.core=> (stop! s)
 
 ### Development with Emacs
 
-Navigate to a clojure file and start a figwheel REPL with
+Navigate to a clojure file and start a nREPL connection with
 `cider-jack-in` or (`C-c M-j`).
 
 ## Build

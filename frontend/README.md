@@ -13,9 +13,9 @@
 lein dev
 ```
 
-### Start Figwheel from CIDER
+### Development with Emacs
 
-Navigate to a clojurescript file and start a figwheel REPL with
+Navigate to a ClojureScript file and start a figwheel REPL with
 `cider-jack-in-clojurescript` or (`C-c M-J`).
 
 ### Chrome cljs-devtools
@@ -29,6 +29,5 @@ To enable:
 
 ## Build
 
-```
-lein build
-```
+Compile the project with `lein build`. It will generate the artifacts
+in `resources/public`.
