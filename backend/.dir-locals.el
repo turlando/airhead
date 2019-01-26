@@ -1,5 +1,12 @@
-((nil . ((projectile-project-type . lein-test)
+((nil . ((whitespace-style . (face
+                              tabs tab-mark indentation::tab
+                              spaces space-mark indentation::space
+                              newline newline-mark
+                              trailing))
+
          (clojure-align-forms-automatically . t)
+         (projectile-project-type . lein-test)
+
          (eval . (progn
                    ;; Define custom indentation for functions inside metabase.
                    ;; This list isn't complete; add more forms as we come across them.
