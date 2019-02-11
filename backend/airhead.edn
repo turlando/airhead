@@ -1,14 +1,12 @@
-{:bind {:addr "127.0.0.1"
-        :port 8080}
+{:addr        "127.0.0.1"
+ :port        8080
+ :static-path "../frontend/resources/public"
 
- :http {:static-path "../frontend/resources/public" ;; string or nil
-        }
+ :library-path "library"
+ :auto-dj?     false
 
- :library {:path     "library"
-           :auto-dj? false}
-
- :info {:name          "AirHead"
-        :greet-message "Welcome!"}
+ :info {:name    "AirHead"
+        :message "Welcome!"}
 
  :icecast {:addr     "127.0.0.1"
            :port     8000
