@@ -1,5 +1,6 @@
 (ns airhead.utils
-  (:require [clojure.string :as string]
+  (:require [clojure.spec.alpha :as s]
+            [clojure.string :as string]
             [clojure.java.io :as io]
             [clojure.java.shell :as shell]))
 

@@ -16,11 +16,13 @@
                             "./"])
 
 (defn stop!
-  [{:keys [ice-conn stream]
+  [{:keys [ice-conn stream http-server]
     :as   args}]
   (log/info "Stopping Airhead")
-  (server/stop! args)
-  (stream/stop! stream)
+  (when-not (nil? http-server)
+    (server/stop! args))
+  (when-not (nil? stream)
+    (stream/stop! stream))
   (try
     (libshout/close! ice-conn)
     (catch Exception e
@@ -38,18 +40,28 @@
               lib-path    (-> config :library :path)
               library     (library/open lib-path)
               playlist    (playlist/mk-playlist)
+              icecast     (:icecast config)
+              info        (:info config)
               ice-conn    (do (libshout/init-lib!)
-                              (libshout/open (:icecast config)))
+                              (libshout/open icecast))
               stream      (stream/mk-stream
                            {:ice-conn ice-conn
                             :library  library
                             :playlist playlist
                             :random?  (-> config :library :auto-dj?)})
               http-server (server/start!
-                           {:config   config
-                            :library  library
-                            :playlist playlist
-                            :stream   stream})]
+                           {:addr        (-> config :bind :addr)
+                            :port        (-> config :bind :port)
+                            :static-path (-> config :http :static-path)
+                            :info        {:name       (:name info)
+                                          :message    (:greet-message info)
+                                          :stream-url (str "http://" (:addr icecast)
+                                                           ":" (:port icecast)
+                                                           "/" (:mount icecast))}
+                            :config      config
+                            :library     library
+                            :playlist    playlist
+                            :stream      stream})]
           {:config      config
            :library     library
            :playlist    playlist

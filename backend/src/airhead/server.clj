@@ -1,6 +1,7 @@
 (ns airhead.server
-  (:require [clojure.data.json :as json]
-            [org.httpkit.server :as server]
+  (:require [clojure.spec.alpha :as s]
+            [clojure.data.json :as json]
+            [org.httpkit.server :as httpkit]
             [ring.middleware.params :as middleware.params]
             [ring.middleware.multipart-params :as middleware.multipart-params]
             [ring.middleware.json :as middleware.json]
@@ -30,7 +31,7 @@
 
 (defn notify-websocket-clients [clients data]
   (doseq [channel @clients]
-    (server/send! channel (json/write-str data) false)))
+    (httpkit/send! channel (json/write-str data) false)))
 
 (defn update-response [x]
   {:update x})
@@ -41,14 +42,11 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- get-info [request]
-  (let [info    (-> request :config :info)
-        icecast (-> request :config :icecast)]
+  (let [info    (:info request)]
     (ok-response
      {:name          (:name info)
       :greet_message (:greet-message info)
-      :stream_url    (str "http://" (:addr icecast)
-                          ":" (:port icecast)
-                          "/" (:mount icecast))})))
+      :stream_url    (:stream-url info)})))
 
 (defn- get-library [request]
   (let [lib (-> request :library)
@@ -114,9 +112,9 @@
 
 (defn- get-ws [request]
   (let [clients (-> request :ws-clients)]
-    (server/with-channel request channel
+    (httpkit/with-channel request channel
       (swap! clients conj channel)
-      (server/on-close channel
+      (httpkit/on-close channel
                        (fn [status]
                          (swap! clients #(remove #{channel} %)))))))
 
@@ -165,10 +163,28 @@
 ;; START/STOP                                                                 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(s/def ::name string?)
+(s/def ::message string?)
+(s/def ::stream-url string?)
+
+(s/def ::info (s/keys :req-un [::name ::message ::stream-url]))
+
+(s/def ::addr string?)
+(s/def ::port integer?)
+(s/def ::static-path (s/nilable string?))
+
+(s/def ::config (s/keys :req-un [::addr ::port ::static-path
+                                 ::info
+                                 ::library ::playlist ::stream]))
+
+
 (defn start!
-  [{:keys [config library playlist stream]
+  [{:keys [addr port static-path info library playlist stream]
     :as   args}]
+  {:pre [(s/valid? ::config args)]}
+
   (let [ws-clients (atom [])]
+
     (add-watch (library/get-atom library) :notify-ws-library
                (fn [key ref old-value new-value]
                  (notify-websocket-clients ws-clients
@@ -177,12 +193,12 @@
                (fn [key ref old-value new-value]
                  (notify-websocket-clients ws-clients
                                            (update-response "playlist"))))
-    (server/run-server
+
+    (httpkit/run-server
      (-> (compojure/routes
           routes
-          (when-let [static-path (-> config :http :static-path)]
-            (compojure.route/files "/" {:root static-path})))
-         (wrap-assoc-request :config config)
+          (when static-path (compojure.route/files "/" {:root static-path})))
+         (wrap-assoc-request :info info)
          (wrap-assoc-request :library library)
          (wrap-assoc-request :playlist playlist)
          (wrap-assoc-request :stream stream)
@@ -191,8 +207,8 @@
          middleware.multipart-params/wrap-multipart-params
          middleware.json/wrap-json-response
          wrap-cors)
-     {:ip       (-> config :bind :addr)
-      :port     (-> config :bind :port)
+     {:ip       addr
+      :port     port
       :max-body 100000000 ;; 100Mb
       :join?    false})))
 
