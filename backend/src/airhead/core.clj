@@ -20,7 +20,7 @@
     :as   args}]
   (log/info "Stopping Airhead")
   (when-not (nil? http-server)
-    (server/stop! args))
+    (server/stop! http-server))
   (when-not (nil? stream)
     (stream/stop! stream))
   (try
@@ -58,7 +58,6 @@
                                           :stream-url (str "http://" (:addr icecast)
                                                            ":" (:port icecast)
                                                            "/" (:mount icecast))}
-                            :config      config
                             :library     library
                             :playlist    playlist
                             :stream      stream})]

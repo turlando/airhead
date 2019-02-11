@@ -1,5 +1,6 @@
 (ns airhead.server
-  (:require [clojure.spec.alpha :as s]
+  (:require [clojure.tools.logging :as log]
+            [clojure.spec.alpha :as s]
             [clojure.data.json :as json]
             [org.httpkit.server :as httpkit]
             [ring.middleware.params :as middleware.params]
@@ -42,7 +43,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- get-info [request]
-  (let [info    (:info request)]
+  (let [info (:info request)]
     (ok-response
      {:name          (:name info)
       :greet_message (:greet-message info)
@@ -115,8 +116,8 @@
     (httpkit/with-channel request channel
       (swap! clients conj channel)
       (httpkit/on-close channel
-                       (fn [status]
-                         (swap! clients #(remove #{channel} %)))))))
+                        (fn [status]
+                          (swap! clients #(remove #{channel} %)))))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -173,17 +174,36 @@
 (s/def ::port integer?)
 (s/def ::static-path (s/nilable string?))
 
-(s/def ::config (s/keys :req-un [::addr ::port ::static-path
-                                 ::info
-                                 ::library ::playlist ::stream]))
-
+(s/def ::start-args (s/keys :req-un [::addr ::port ::static-path ::info
+                                     ::library ::playlist ::stream]))
+(s/def ::start-ret (s/keys ::req-un [::http-server ::library ::playlist]))
 
 (defn start!
-  [{:keys [addr port static-path info library playlist stream]
+  [{:keys [addr port static-path info
+           library playlist stream]
     :as   args}]
-  {:pre [(s/valid? ::config args)]}
+  {:pre  [(s/valid? ::start-args args)]
+   :post [(s/valid? ::start-ret %)]}
 
-  (let [ws-clients (atom [])]
+  (let [ws-clients  (atom [])
+        http-server (httpkit/run-server
+                     (-> (compojure/routes
+                          routes
+                          (when static-path
+                            (compojure.route/files "/" {:root static-path})))
+                         (wrap-assoc-request :info info)
+                         (wrap-assoc-request :library library)
+                         (wrap-assoc-request :playlist playlist)
+                         (wrap-assoc-request :stream stream)
+                         (wrap-assoc-request :ws-clients ws-clients)
+                         middleware.params/wrap-params
+                         middleware.multipart-params/wrap-multipart-params
+                         middleware.json/wrap-json-response
+                         wrap-cors)
+                     {:ip       addr
+                      :port     port
+                      :max-body 100000000 ;; 100Mb
+                      :join?    false})]
 
     (add-watch (library/get-atom library) :notify-ws-library
                (fn [key ref old-value new-value]
@@ -194,25 +214,16 @@
                  (notify-websocket-clients ws-clients
                                            (update-response "playlist"))))
 
-    (httpkit/run-server
-     (-> (compojure/routes
-          routes
-          (when static-path (compojure.route/files "/" {:root static-path})))
-         (wrap-assoc-request :info info)
-         (wrap-assoc-request :library library)
-         (wrap-assoc-request :playlist playlist)
-         (wrap-assoc-request :stream stream)
-         (wrap-assoc-request :ws-clients ws-clients)
-         middleware.params/wrap-params
-         middleware.multipart-params/wrap-multipart-params
-         middleware.json/wrap-json-response
-         wrap-cors)
-     {:ip       addr
-      :port     port
-      :max-body 100000000 ;; 100Mb
-      :join?    false})))
+    {:http-server http-server
+     :library     library
+     :playlist    playlist}))
 
-(defn stop! [{:keys [library playlist http-server]}]
+(defn stop!
+  [{:keys [http-server library playlist]
+    :as args}]
+  {:pre [(s/valid? ::start-ret args)]}
+
   (remove-watch (library/get-atom library) :notify-ws-library)
   (remove-watch playlist :notify-ws-playlist)
-  (http-server :timeout 0))
+  (http-server :timeout 0)
+  nil)
