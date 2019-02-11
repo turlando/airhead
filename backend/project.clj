@@ -7,9 +7,10 @@
 
   :min-lein-version "2.8.0"
 
-  :dependencies [[org.clojure/clojure "1.9.0"]
+  :dependencies [[org.clojure/clojure "1.10.0"]
                  [org.clojure/tools.logging "0.4.1"]
                  [org.clojure/data.json "0.2.6"]
+                 [org.clojure/spec.alpha "0.2.176"]
                  [log4j/log4j "1.2.17"]
                  [http-kit "2.3.0"]
                  [ring/ring-core "1.7.1"]
