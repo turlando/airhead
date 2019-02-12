@@ -143,7 +143,9 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- add-cors [response]
-  (assoc-in response [:headers "Access-Control-Allow-Origin"] "*"))
+  (-> response
+      (assoc-in [:headers "Access-Control-Allow-Origin"] "*")
+      (assoc-in [:headers "Access-Control-Allow-Methods"] "GET, POST, PUT, DELETE")))
 
 (defn- wrap-cors [handler]
   (fn wrap-cors*
