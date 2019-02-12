@@ -11,7 +11,10 @@
 
 (defn- read-json [^java.io.File path]
   (with-open [r (io/reader path)]
-    (json/read r :key-fn keyword)))
+    (json/read r :key-fn (fn [k]
+                           (if (some #{"title" "artist" "album" "uuid"} #{k})
+                             (keyword k)
+                             k)))))
 
 (defn- write-json [m ^java.io.File path]
   (with-open [w (io/writer path)]
@@ -63,9 +66,7 @@
      :lock      (Object.)}))
 
 (defn get-track [library uuid]
-  (get (get-metadata library)
-       (keyword uuid)
-       nil))
+  (get (get-metadata library) uuid nil))
 
 (defn get-track-path [library uuid]
   (io/file (:base-path library) (str uuid ".ogg")))
@@ -73,8 +74,7 @@
 (defn get-random-track [library]
   (-> (get-metadata library)
       keys
-      rand-nth
-      name))
+      rand-nth))
 
 (defn search
   ([library]
@@ -94,8 +94,8 @@
         f     (future
                 (transcode! file out)
                 (locking (:lock library)
-                  (swap! (:metadata library) assoc (keyword uuid) tags)
-                  (write-json (:meta-path library) (get-metadata library))))]
+                  (swap! (:metadata library) assoc uuid tags)
+                  (write-json (get-metadata library) (:meta-path library))))]
     {:tags   tags
      :future f}))
 
