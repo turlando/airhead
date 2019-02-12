@@ -4,6 +4,7 @@
             [clojure.tools.logging :as log]
             [clojure.spec.alpha :as s]
             [clojure.edn :as edn]
+            [clojure.java.io :as io]
             [airhead.utils :as utils]
             [airhead.library :as library]
             [airhead.playlist :as playlist]
@@ -29,7 +30,7 @@
    :post [(s/valid? ::start-ret %)]}
 
   (log/info "Starting Airhead.")
-  (let [library  (library/open library-path)
+  (let [library  (library/open (io/file library-path))
         playlist (playlist/mk-playlist)
 
         ice-conn   (do (libshout/init-lib!)

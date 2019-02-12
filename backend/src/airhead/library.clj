@@ -1,86 +1,103 @@
 (ns airhead.library
   (:require [clojure.string :as string]
+            [clojure.tools.logging :as log]
             [clojure.java.io :as io]
             [clojure.data.json :as json]
             [airhead.utils :as utils])
   (:import (ealvatag.audio AudioFileIO)
            (ealvatag.tag Tag FieldKey)))
 
-(defn- metadata-path [path]
-  (str path "/metadata.json"))
+(def ^:private metadata-file "metadata.json")
 
-(defn open [path]
-  (when-not (-> path io/file .exists)
-    (throw (Exception. "Could not find library directory.")))
-  (let [meta-path (metadata-path path)
-        meta-file (io/file meta-path)]
-    (when-not (.exists meta-file)
-      (spit meta-path (json/write-str {})))
-    {:path          path
-     :metadata-path meta-path
-     :metadata      (atom (-> meta-path
-                              io/reader
-                              (json/read :key-fn keyword)))
-     :lock          (Object.)}))
+(defn- read-json [^java.io.File path]
+  (with-open [r (io/reader path)]
+    (json/read r :key-fn keyword)))
 
-(defn get-atom [library]
-  (:metadata library))
+(defn- write-json [m ^java.io.File path]
+  (with-open [w (io/writer path)]
+    (json/write m w)))
 
-(defn search
-  ([library]
-   (-> library :metadata deref vals))
-  ([library query]
-   (filter
-    #(string/includes?
-      (string/lower-case (string/join " " (-> % (dissoc :uuid) vals)))
-      (string/lower-case query))
-    (->> library :metadata deref vals))))
+(defn- get-meta-path* [^java.io.File base-path]
+  (io/file base-path metadata-file))
 
-(defn get-track [library uuid]
-  (-> library :metadata deref (get (keyword uuid) nil)))
+(defn- maybe-init-library! [^java.io.File base-path]
+  (when (.mkdirs base-path)
+    (log/info "Creating new library in " (.getCanonicalPath base-path))
+    (spit (get-meta-path* base-path) (json/write-str {}))))
 
-(defn get-random-track [library]
-  (-> library :metadata deref keys rand-nth name))
+(defn- get-metadata [library]
+  (-> library :metadata deref))
 
-(defn get-track-path [library uuid]
-  (str (:path library) "/" uuid ".ogg"))
-
-(defn- read-codec [path]
+(defn- read-codec [^java.io.File path]
   (-> (utils/sh! "ffprobe"
                  "-v" "error"
                  "-select_streams" "a:0"
                  "-show_entries" "stream=codec_name"
                  "-of" "default=nokey=1:noprint_wrappers=1"
-                 path)
+                 (.getCanonicalPath path))
       string/trim-newline))
 
-(defn- read-tags [^java.io.File file]
-  (let [codec (read-codec (.getPath file))
-        audio (AudioFileIO/readAs file codec)
+(defn- read-tags [^java.io.File path]
+  (let [codec (read-codec path)
+        audio (AudioFileIO/readAs path codec)
         tags  ^Tag (.get (.getTag audio))]
     {:title  (.get (.getValue tags FieldKey/TITLE))
      :artist (.get (.getValue tags FieldKey/ARTIST))
      :album  (.get (.getValue tags FieldKey/ALBUM))}))
 
-(defn- transcode! [in out]
+(defn- transcode! [^java.io.File in ^java.io.File out]
   (utils/sh! "ffmpeg"
-             "-i"     in
+             "-i"     (.getCanonicalPath in)
              "-map"   "0:0"
              "-f"     "ogg"
              "-c:a:0" "libvorbis"
              "-q:a:0" "6"
-             out))
+             (.getCanonicalPath out)))
+
+(defn open [^java.io.File base-path]
+  (maybe-init-library! base-path)
+  (let [meta-path (get-meta-path* base-path)]
+    {:base-path base-path
+     :meta-path meta-path
+     :metadata  (atom (read-json meta-path))
+     :lock      (Object.)}))
+
+(defn get-track [library uuid]
+  (get (get-metadata library)
+       (keyword uuid)
+       nil))
+
+(defn get-track-path [library uuid]
+  (io/file (:base-path library) (str uuid ".ogg")))
+
+(defn get-random-track [library]
+  (-> (get-metadata library)
+      keys
+      rand-nth
+      name))
+
+(defn search
+  ([library]
+   (-> (get-metadata library) vals))
+  ([library query]
+   (filter
+    #(string/includes?
+      (string/lower-case (string/join " " (-> % (dissoc :uuid) vals)))
+      (string/lower-case query))
+    (-> (get-metadata library) vals))))
 
 (defn add [library ^java.io.File file]
   (let [uuid  (utils/uuid)
         tags* (read-tags file)
         tags  (assoc tags* :uuid uuid)
-        out   (str (:path library) "/" uuid ".ogg")
+        out   (get-track-path library uuid)
         f     (future
-                (transcode! (.getPath file) out)
+                (transcode! file out)
                 (locking (:lock library)
                   (swap! (:metadata library) assoc (keyword uuid) tags)
-                  (spit (:metadata-path library)
-                        (json/write-str @(:metadata library)))))]
+                  (write-json (:meta-path library) (get-metadata library))))]
     {:tags   tags
      :future f}))
+
+(defn get-atom [library]
+  (:metadata library))
