@@ -13,13 +13,12 @@
     (if-let [current-track (playlist/get-current playlist)]
       (do
         (log/info "Picking " current-track)
-        (let [track-path (library/get-track-path library current-track)]
-          (with-open [track-stream (-> track-path io/input-stream)]
-            (log/info "Starting track streaming.")
-            (libshout/send-input-stream! ice-conn track-stream skip?)
-            (log/info "Track streaming completed. Skipped:" @skip?)
-            (dosync (ref-set skip? false))
-            (playlist/pop! playlist))))
+        (with-open [track-stream (library/get-track-input-stream library current-track)]
+          (log/info "Starting track streaming.")
+          (libshout/send-input-stream! ice-conn track-stream skip?)
+          (log/info "Track streaming completed. Skipped:" @skip?)
+          (dosync (ref-set skip? false))
+          (playlist/pop! playlist)))
       (do (if (and random? (not (empty? (library/search library))))
             (do
               (log/info "Picking random track.")

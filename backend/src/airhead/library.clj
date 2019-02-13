@@ -31,6 +31,11 @@
 (defn- get-metadata [library]
   (-> library :metadata deref))
 
+(defn- get-track-path [library uuid]
+  "Return a path to the track file without checking if it exists in the library
+  or in the filesystem."
+  (io/file (:base-path library) (str uuid ".ogg")))
+
 (defn- read-codec [^java.io.File path]
   (-> (utils/sh! "ffprobe"
                  "-v" "error"
@@ -68,9 +73,6 @@
 (defn get-track [library uuid]
   (get (get-metadata library) uuid nil))
 
-(defn get-track-path [library uuid]
-  (io/file (:base-path library) (str uuid ".ogg")))
-
 (defn get-random-track [library]
   (-> (get-metadata library)
       keys
@@ -98,6 +100,15 @@
                   (write-json (get-metadata library) (:meta-path library))))]
     {:tags   tags
      :future f}))
+
+(defn get-track-input-stream
+  ^java.io.InputStream
+  [library uuid]
+  "If the required track exists in the library then return an InputStream or nil
+  otherwise."
+  (if (get-track library uuid)
+    (io/input-stream (get-track-path library uuid))
+    nil))
 
 (defn get-atom [library]
   (:metadata library))
