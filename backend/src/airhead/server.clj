@@ -71,11 +71,11 @@
     (ok-response {:track uuid})))
 
 (defn- get-playlist [request]
-  (let [lib    (-> request :library)
-        pl     (-> request :playlist)
-        status (playlist/status pl)]
-    (ok-response {:current (library/get-track lib (first status))
-                  :next    (map #(library/get-track lib %) (rest status))})))
+  (let [library  (-> request :library)
+        playlist (-> request :playlist)
+        p        (playlist/get-playlist playlist)]
+    (ok-response {:current (library/get-track library (:current p))
+                  :next    (map #(library/get-track library %) (:next p))})))
 
 (defn- put-playlist [request]
   (let [lib        (-> request :library)

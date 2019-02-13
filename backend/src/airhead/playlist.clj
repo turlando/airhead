@@ -1,11 +1,24 @@
 (ns airhead.playlist
   (:require [airhead.utils :as utils]))
 
-(defn mk-playlist []
-  (atom (utils/queue)))
+(defn- queue [] (clojure.lang.PersistentQueue/EMPTY))
 
-(defn status [playlist]
+(defn mk-playlist []
+  (atom (queue)))
+
+(defn get-queue [playlist]
   (sequence @playlist))
+
+(defn get-playlist [playlist]
+  (let [p (sequence @playlist)]
+    {:current (first p)
+     :next    (rest p)}))
+
+(defn get-current [playlist]
+  (first (sequence @playlist)))
+
+(defn get-next [playlist]
+  (rest (sequence @playlist)))
 
 (defn push! [playlist x]
   (sequence (swap! playlist conj x)))

@@ -5,13 +5,12 @@
             [airhead.library :as library]
             [airhead.libshout :as libshout]))
 
-
 (def ^:private idle-track (io/resource "idle-track.ogg"))
 
 (defn- stream! [ice-conn library playlist random? stop? skip?]
   (log/info "Starting streaming.")
   (while (not @stop?)
-    (if-let [current-track (-> (playlist/status playlist) first)]
+    (if-let [current-track (playlist/get-current playlist)]
       (do
         (log/info "Picking " current-track)
         (let [track-path (library/get-track-path library current-track)]

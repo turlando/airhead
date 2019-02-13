@@ -7,8 +7,6 @@
 (def not-nil? (complement nil?))
 (def not-blank? (complement string/blank?))
 
-(defn queue [] (clojure.lang.PersistentQueue/EMPTY))
-
 (defn seek
   "Returns first item from coll for which (pred item) returns true.
    Returns nil if no such item is present, or the not-found value if supplied."
