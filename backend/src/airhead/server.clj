@@ -82,9 +82,9 @@
         pl         (-> request :playlist)
         ws-clients (-> request :ws-clients)
         id         (-> request :params :id)
-        status     (playlist/status pl)]
+        queue      (playlist/get-queue pl)]
     (cond
-      (some #{id} status)               (bad-request-response
+      (some #{id} queue)                (bad-request-response
                                          {:err "duplicate"
                                           :msg (str "The track is already "
                                                     "present in the playlist.")})
@@ -100,16 +100,16 @@
         ws-clients (-> request :ws-clients)
         stream     (-> request :stream)
         id         (-> request :params :id)
-        status     (playlist/status pl)]
+        queue      (playlist/get-queue pl)]
     (cond
-      (not-any? #{id} status)             (bad-request-response
-                                           {:err "track_not_found"
-                                            :msg "No track found with such UUID."})
+      (not-any? #{id} queue)           (bad-request-response
+                                        {:err "track_not_found"
+                                         :msg "No track found with such UUID."})
       ;; TODO: this is not thread safe.
-      (= id (first (playlist/status pl))) (do (stream/skip! stream)
-                                              (ok-response {}))
-      :else                               (do (playlist/remove! pl id)
-                                              (ok-response {})))))
+      (= id (playlist/get-current pl)) (do (stream/skip! stream)
+                                           (ok-response {}))
+      :else                            (do (playlist/remove! pl id)
+                                           (ok-response {})))))
 
 (defn- get-ws [request]
   (let [clients (-> request :ws-clients)]
@@ -222,7 +222,7 @@
 
 (defn stop!
   [{:keys [http-server library playlist]
-    :as args}]
+    :as   args}]
   {:pre [(s/valid? ::start-ret args)]}
 
   (remove-watch (library/get-atom library) :notify-ws-library)
