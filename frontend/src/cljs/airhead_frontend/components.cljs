@@ -59,7 +59,8 @@
       (when-let [url (get-in @app-state [:info :stream_url])]
         [:section#player
          [:audio.hidden {:ref #(reset! audio-ref %)}
-          [:source {:src url}]]
+          [:source {:src url
+                    :type "audio/ogg"}]]
 
          (when-let [audio @audio-ref]
            [:div.controller-box
