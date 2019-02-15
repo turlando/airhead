@@ -1,30 +1,65 @@
 (ns airhead.playlist
   (:require [airhead.utils :as utils]))
 
-(defn- queue [] (clojure.lang.PersistentQueue/EMPTY))
-
 (defn mk-playlist []
-  (atom (queue)))
+  (ref clojure.lang.PersistentQueue/EMPTY))
 
-(defn get-queue [playlist]
-  (sequence @playlist))
-
-(defn get-playlist [playlist]
-  (let [p (sequence @playlist)]
-    {:current (first p)
-     :next    (rest p)}))
-
-(defn get-current [playlist]
+(defn- get-current* [playlist]
   (first (sequence @playlist)))
 
-(defn get-next [playlist]
+(defn- get-next* [playlist]
   (rest (sequence @playlist)))
 
-(defn push! [playlist x]
-  (sequence (swap! playlist conj x)))
+(defn- enqueued?* [playlist item]
+  "Not thread safe."
+  (some #(= item %) @playlist))
 
-(defn pop! [playlist]
-  (sequence (swap! playlist pop)))
+(defn- remove!* [playlist item]
+  (if-not (enqueued?* playlist item)
+    :not-found
+    (if (= item (get-current* playlist))
+      (do (alter playlist pop)
+          :skipped)
+      ;; Nasty hack to avoid type coercion.
+      (do (alter playlist #(apply conj clojure.lang.PersistentQueue/EMPTY
+                                  (remove #{item} %)))
+          :success))))
 
-(defn remove! [playlist x]
-  (sequence (swap! playlist #(remove #{x} %))))
+(defn get-playlist [playlist]
+  (dosync
+   {:current (get-current* playlist)
+    :next    (get-next* playlist)}))
+
+(defn get-current [playlist]
+  (dosync
+   (get-current* playlist)))
+
+(defn get-next [playlist]
+  (dosync
+   (get-next* playlist)))
+
+(defn enqueue! [playlist item]
+  (dosync
+   (if (enqueued?* playlist item)
+     :duplicate
+     (do (alter playlist conj item)
+         :success))))
+
+(defn dequeue! [playlist]
+  (dosync
+   (if-not (get-current* playlist)
+     :empty
+     (do (alter playlist pop)
+         :success))))
+
+(defn remove!
+  ([playlist item]
+   (dosync
+    (remove!* playlist item)))
+  ([playlist item skip-fn]
+   (dosync
+    (let [r (remove!* playlist item)]
+      (if (= :skipped r)
+        (do (skip-fn)
+            r)
+        r)))))

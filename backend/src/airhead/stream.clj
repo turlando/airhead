@@ -9,24 +9,27 @@
 
 (defn- stream! [ice-conn library playlist random? stop? skip?]
   (log/info "Starting streaming.")
-  (while (not @stop?)
-    (if-let [current-track (playlist/get-current playlist)]
-      (do
-        (log/info "Picking " current-track)
-        (with-open [track-stream (library/get-track-input-stream library current-track)]
-          (log/info "Starting track streaming.")
-          (libshout/send-input-stream! ice-conn track-stream skip?)
-          (log/info "Track streaming completed. Skipped:" @skip?)
-          (dosync (ref-set skip? false))
-          (playlist/pop! playlist)))
-      (do (if (and random? (not (empty? (library/search library))))
-            (do
-              (log/info "Picking random track.")
-              (playlist/push! playlist (library/get-random-track library)))
-            (do
-              (log/info "No tracks in playlist. Sending idle track.")
-              (with-open [idle-stream (io/input-stream idle-track)]
-                (libshout/send-input-stream! ice-conn idle-stream skip?)))))))
+  (try
+    (while (not @stop?)
+      (if-let [current-track (playlist/get-current playlist)]
+        (do
+          (log/info "Picking " current-track)
+          (with-open [track-stream (library/get-track-input-stream library current-track)]
+            (log/info "Starting track streaming.")
+            (libshout/send-input-stream! ice-conn track-stream skip?)
+            (log/info "Track streaming completed. Skipped:" @skip?)
+            ;; caller is taking care of dequeing
+            (dosync (ref-set skip? false))))
+        (do (if (and random? (not (empty? (library/search library))))
+              (do
+                (log/info "Picking random track.")
+                (playlist/enqueue! playlist (library/get-random-track library)))
+              (do
+                (log/info "No tracks in playlist. Sending idle track.")
+                (with-open [idle-stream (io/input-stream idle-track)]
+                  (libshout/send-input-stream! ice-conn idle-stream skip?)))))))
+    (catch Exception e
+      (log/fatal e "Streamer crashed.")))
   (log/info "Streaming stopped.")
   nil)
 

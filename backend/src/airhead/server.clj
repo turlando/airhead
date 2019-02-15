@@ -73,43 +73,37 @@
 (defn- get-playlist [request]
   (let [library  (-> request :library)
         playlist (-> request :playlist)
-        p        (playlist/get-playlist playlist)]
-    (ok-response {:current (library/get-track library (:current p))
-                  :next    (map #(library/get-track library %) (:next p))})))
+        p        (playlist/get-playlist playlist)
+        response {:current (library/get-track library (:current p))
+                  :next    (map #(library/get-track library %) (:next p))}]
+    (ok-response response)))
 
 (defn- put-playlist [request]
-  (let [lib        (-> request :library)
-        pl         (-> request :playlist)
-        ws-clients (-> request :ws-clients)
-        id         (-> request :params :id)
-        queue      (playlist/get-queue pl)]
-    (cond
-      (some #{id} queue)                (bad-request-response
-                                         {:err "duplicate"
-                                          :msg (str "The track is already "
-                                                    "present in the playlist.")})
-      (nil? (library/get-track lib id)) (bad-request-response
-                                         {:err "track_not_found"
-                                          :msg "No track found with such UUID."})
-      :else                             (do (playlist/push! pl id)
-                                            (ok-response {})))))
+  (let [lib (-> request :library)
+        pl  (-> request :playlist)
+        id  (-> request :params :id)]
+    (when (nil? (library/get-track lib id))
+      (bad-request-response
+       {:err "track_not_found"
+        :msg "No track found with such UUID."}))
+    (case (playlist/enqueue! pl id)
+      :duplicate (bad-request-response
+                  {:err "duplicate"
+                   :msg (str "The track is already "
+                             "present in the playlist.")})
+      :success   (ok-response {}))))
 
 (defn- delete-playlist [request]
-  (let [lib        (-> request :library)
-        pl         (-> request :playlist)
-        ws-clients (-> request :ws-clients)
-        stream     (-> request :stream)
-        id         (-> request :params :id)
-        queue      (playlist/get-queue pl)]
-    (cond
-      (not-any? #{id} queue)           (bad-request-response
-                                        {:err "track_not_found"
-                                         :msg "No track found with such UUID."})
-      ;; TODO: this is not thread safe.
-      (= id (playlist/get-current pl)) (do (stream/skip! stream)
-                                           (ok-response {}))
-      :else                            (do (playlist/remove! pl id)
-                                           (ok-response {})))))
+  (let [pl      (-> request :playlist)
+        stream  (-> request :stream)
+        id      (-> request :params :id)
+        skip-fn #(stream/skip! stream)]
+    (case (playlist/remove! pl id skip-fn)
+      :not-found (bad-request-response
+                  {:err "track_not_found"
+                   :msg "No track found with such UUID."})
+      :skipped   (ok-response {})
+      :success   (ok-response {}))))
 
 (defn- get-ws [request]
   (let [clients (-> request :ws-clients)]

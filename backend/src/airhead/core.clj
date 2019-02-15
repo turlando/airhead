@@ -81,7 +81,7 @@
 (defn -main []
   (let [config-path (utils/find-file-in-dirs config-file config-dirs)
         config      (edn/read-string (slurp config-path))
-        s           (start!   config)]
+        s           (start! config)]
     (clojure.repl/set-break-handler!
      (fn [_]
        (stop! s)
