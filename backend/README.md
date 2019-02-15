@@ -31,10 +31,9 @@ airhead.core=>
 
 ### Starting and stopping the backend
 
-Just call the `start!` function.
-
 ```
-airhead.core=> (def s (start!))
+airhead.core=> (def c (edn/read-string (slurp "airhead.edn")))
+airhead.core=> (def s (start! c))
 ```
 
 It will also bind the application state to the variable `s`. This will allow us
