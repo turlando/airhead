@@ -46,7 +46,7 @@
   (let [info (:info request)]
     (ok-response
      {:name          (:name info)
-      :greet_message (:greet-message info)
+      :greet_message (:message info)
       :stream_url    (:stream-url info)})))
 
 (defn- get-library [request]
