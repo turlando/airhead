@@ -18,8 +18,11 @@
             (log/info "Starting track streaming.")
             (libshout/send-input-stream! ice-conn track-stream skip?)
             (log/info "Track streaming completed. Skipped:" @skip?)
-            ;; caller is taking care of dequeing
-            (dosync (ref-set skip? false))))
+            (dosync
+             (if @skip?
+               ;; caller is taking care of dequeing if skip is set
+               (ref-set skip? false)
+               (playlist/dequeue! playlist)))))
         (do (if (and random? (not (empty? (library/search library))))
               (do
                 (log/info "Picking random track.")
