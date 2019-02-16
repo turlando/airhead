@@ -73,15 +73,19 @@
          :repl-options   {:nrepl-middleware [cider.piggieback/wrap-cljs-repl]}
          :less           {:source-map true}
          :figwheel       {:server-port 8081
-                          :css-dirs    ["resources/public/css"]}}}
+                          :css-dirs    ["resources/public/css"]}}
+   :min {:plugins                  [[cljs-simple-cache-buster "0.2.1"]]
+         :cljs-simple-cache-buster {:cljsbuild-id  "min"
+                                    :template-file "src/html/index.html"
+                                    :output-to     "resources/public/index.html"}}}
 
   :aliases
-  {"dev"   ["with-profile" "+dev" "do"
+  {"dev"   ["with-profile" "+dev,-min" "do"
             ["clean"]
             ["cljsbuild" "once" "dev"]
             ["less4j" "once"]
             ["figwheel" "dev"]]
-   "build" ["with-profile" "-dev" "do"
+   "build" ["with-profile" "-dev,+min" "do"
             ["clean"]
             ["less4j" "once"]
             ["cljsbuild" "once" "min"]]})

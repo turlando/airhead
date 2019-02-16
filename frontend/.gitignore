@@ -4,5 +4,6 @@
 /.rebel_readline_history
 /*.log
 /target
+/resources/public/index.html
 /resources/public/css
 /resources/public/js
