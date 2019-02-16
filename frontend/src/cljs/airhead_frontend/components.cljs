@@ -6,6 +6,9 @@
             [airhead-frontend.requests :as req]
             [markdown.core :refer [md->html]]))
 
+(defn icon [i]
+  [:img.icon {:src (str "icons/" (name i) ".svg")}])
+
 ;; -------------------------
 ;; Header
 
@@ -22,33 +25,33 @@
 ;; Player
 
 (defn playbar-button [title action icon]
-  [:button.pure-button.pure-u-1-4 {:title title :on-click action} [icon]])
+  [:button.pure-button.pure-u-1-4 {:title title :on-click action} icon])
 
 (defn pause-button [audio]
-  [playbar-button "Pause" #(.pause audio) :i.fa.fa-pause])
+  [playbar-button "Pause" #(.pause audio) (icon :pause)])
 
 (defn play-button [audio]
-  [playbar-button "Play" #(.play audio) :i.fa.fa-play])
+  [playbar-button "Play" #(.play audio) (icon :play)])
 
 (defn skip-button []
-  [playbar-button "Skip" req/playlist-skip! :i.fa.fa-step-forward])
+  [playbar-button "Skip" req/playlist-skip! (icon :step-forward)])
 
 (defn audio-on-button [audio]
-  [playbar-button "Mute" #(set! (.-muted audio) true) :i.fa.fa-volume-up])
+  [playbar-button "Mute" #(set! (.-muted audio) true) (icon :volume-up)])
 
 (defn audio-off-button [audio]
-  [playbar-button "Unmute" #(set! (.-muted audio) false) :i.fa.fa-volume-off])
+  [playbar-button "Unmute" #(set! (.-muted audio) false) (icon :volume-off)])
 
 (defn open-stream-link [url]
   [:a.pure-button.pure-u-1-4 {:title "Open stream" :href url :target "_blank"}
-   [:i.fa.fa-external-link]])
+   (icon :external-link)])
 
 (defn right-box [head body]
   [:div.right-box head [:span body]])
 
 (defn now-playing []
   (let [track (@app-state :now-playing)]
-    [right-box [:i.fa.fa-music]
+    [right-box (icon :music)
      (if track
        (str (:artist track) " - " (:title track))
        [:em "Nothing is playing."])]))
@@ -88,13 +91,13 @@
   [:button.track-action
    {:title "Add to playlist"
     :on-click #(req/playlist-add! (:uuid track))}
-   [:i.fa.fa-plus]])
+   (icon :plus)])
 
 (defn playlist-remove-button [track]
   [:button.pure-button.track-action
    {:title "Remove from playlist"
     :on-click #(req/playlist-remove! (:uuid track))}
-   [:i.fa.fa-minus]])
+   (icon :minus)])
 
 (defn track-field [text]
   [:td {:title text} text])
@@ -161,7 +164,7 @@
    {:title "Select a file"
     :on-click #(when @file-input-ref
                  (.click @file-input-ref))}
-   [:i.fa.fa-folder-open]])
+   (icon :folder-open)])
 
 (defn get-file-name [file-input-ref]
   (let [path (.-value @file-input-ref)]
@@ -185,7 +188,7 @@
                                        {(hash up-chan)
                                         (merge delta {:file-name file-name})})
                                 (recur))))))}
-   [:i.fa.fa-upload]])
+   (icon :upload)])
 
 (defn upload-section []
   (let [form-ref       (r/atom nil)
@@ -204,7 +207,7 @@
          [file-select-button file-input-ref]
          [upload-button form-ref file-input-ref]]
 
-        [right-box [:i.fa.fa-file-o]
+        [right-box (icon :file-o)
          (when @file-input-ref
            (or (get-file-name file-input-ref)
                "No file selected."))]]
