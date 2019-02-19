@@ -9,8 +9,9 @@
 (defn icon [i]
   [:img.icon {:src (str "icons/" (name i) ".svg")}])
 
-;; -------------------------
-;; Header
+
+;;; HEADER
+;;; ------
 
 (defn header []
   (let [cursor  (r/cursor app-state [:info])
@@ -21,8 +22,9 @@
      [:div {:dangerouslySetInnerHTML
             {:__html (-> message md->html str)}}]]))
 
-;; -------------------------
-;; Player
+
+;;; PLAYER
+;;; ------
 
 (defn playbar-button [title action icon]
   [:button.pure-button.pure-u-1-4 {:title title :on-click action} icon])
@@ -84,8 +86,9 @@
 
             [now-playing]])]))))
 
-;; -------------------------
-;; Tracks
+
+;;; TRACKS
+;;; ------
 
 (defn playlist-add-button [track]
   [:button.track-action
@@ -111,8 +114,9 @@
    [track-field (track :artist)]
    [track-field (track :album)]])
 
-;; -------------------------
-;; Upload
+
+;;; UPLOAD
+;;; ------
 
 (defn info-uploading [file-name loaded total]
   [:div.upload-info
@@ -215,16 +219,18 @@
        (for [[k upload] (@app-state :uploads)]
         ^{:key k} [upload-info upload])])))
 
-;; -------------------------
-;; Tables
+
+;;; TABLES
+;;; ------
 
 (defn table [head content]
   [:table.pure-table.pure-table-horizontal
    [:thead head]
    [:tbody content]])
 
-;; -------------------------
-;; Playlist
+
+;;; PLAYLIST
+;;; --------
 
 (defn playlist-section []
   [:section#playlist
@@ -236,15 +242,17 @@
         ^{:key track} [track-tr track playlist-remove-button])]
      "The playlist is empty.")])
 
-;; -------------------------
-;; Search
+
+;;; SEARCH
+;;; ------
 
 (defn on-query-change [e]
   (update-state! :query (-> e .-target .-value))
   (req/get-library!))
 
-;; -------------------------
-;; Library
+
+;;; LIBRARY
+;;; -------
 
 (defn update-sort-field! [new-field]
   (if (= new-field (:sort-field @app-state))
@@ -285,8 +293,9 @@
       (for [track (sort-tracks tracks)]
         ^{:key track} [track-tr track playlist-add-button])]]))
 
-;; -------------------------
-;; Main
+
+;;; MAIN
+;;; ----
 
 (defn page-component []
   [:main
