@@ -97,7 +97,8 @@
                 (transcode! file out)
                 (locking (:lock library)
                   (swap! (:metadata library) assoc uuid tags)
-                  (write-json (get-metadata library) (:meta-path library))))]
+                  (write-json (get-metadata library) (:meta-path library)))
+                (.delete file))]
     {:tags   tags
      :future f}))
 
