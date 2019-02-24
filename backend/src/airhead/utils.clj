@@ -9,7 +9,8 @@
 
 (defn seek
   "Returns first item from coll for which (pred item) returns true.
-   Returns nil if no such item is present, or the not-found value if supplied."
+   Returns nil if no such item is present, or the not-found value if supplied.
+   Taken from https://dev.clojure.org/jira/browse/CLJ-2056"
   ([pred coll] (seek pred coll nil))
   ([pred coll not-found]
    (reduce (fn [_ x]
