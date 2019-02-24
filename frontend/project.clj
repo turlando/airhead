@@ -24,6 +24,7 @@
                                     "node_modules"
                                     "package.json"
                                     "package-lock.json"
+                                    "resources/public/index.html"
                                     "resources/public/js"
                                     "resources/public/css"
                                     "figwheel_server.log"
