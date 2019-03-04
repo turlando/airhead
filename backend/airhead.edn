@@ -5,8 +5,9 @@
  :library-path "library"
  :auto-dj?     false
 
- :info {:name    "AirHead"
-        :message "Welcome!"}
+ :info {:name       "AirHead"
+        :message    "Welcome!"
+        :stream-url "http://localhost:8000/airhead"}
 
  :icecast {:addr     "127.0.0.1"
            :port     8000

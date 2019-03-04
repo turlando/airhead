@@ -33,21 +33,17 @@
   (let [library  (library/open (io/file library-path))
         playlist (playlist/mk-playlist)
 
-        ice-conn   (do (libshout/init-lib!)
-                       (libshout/open icecast))
-        stream     (stream/mk-stream
-                    {:ice-conn ice-conn
-                     :library  library
-                     :playlist playlist
-                     :random?  auto-dj?})
-        stream-url (str "http://" (:addr icecast)
-                        ":" (:port icecast)
-                        "/" (:mount icecast))
-
+        ice-conn      (do (libshout/init-lib!)
+                          (libshout/open icecast))
+        stream        (stream/mk-stream
+                       {:ice-conn ice-conn
+                        :library  library
+                        :playlist playlist
+                        :random?  auto-dj?})
         server-config {:addr        addr
                        :port        port
                        :static-path static-path
-                       :info        (assoc info :stream-url stream-url)
+                       :info        info
                        :library     library
                        :playlist    playlist
                        :stream      stream}
