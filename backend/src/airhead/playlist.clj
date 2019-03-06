@@ -5,10 +5,10 @@
   (ref clojure.lang.PersistentQueue/EMPTY))
 
 (defn- get-current* [playlist]
-  (first (sequence @playlist)))
+  (peek @playlist))
 
 (defn- get-next* [playlist]
-  (rest (sequence @playlist)))
+  (rest @playlist))
 
 (defn- enqueued?* [playlist item]
   "Not thread safe."
